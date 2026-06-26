@@ -24,6 +24,29 @@ export class MissingCustomSourceError extends Schema.TaggedErrorClass<MissingCus
   }
 ) {}
 
+export class IconifyJsonError extends Schema.TaggedErrorClass<IconifyJsonError>()("IconifyJsonError", {
+  message: Schema.String,
+  packageName: Schema.String,
+  path: Schema.String,
+  sourceName: Schema.String
+}) {}
+
+export class MissingIconifyIconError extends Schema.TaggedErrorClass<MissingIconifyIconError>()(
+  "MissingIconifyIconError",
+  {
+    icon: Schema.String,
+    packageName: Schema.String,
+    sourceName: Schema.String
+  }
+) {}
+
+export class MissingIconifySetError extends Schema.TaggedErrorClass<MissingIconifySetError>()("MissingIconifySetError", {
+  message: Schema.String,
+  packageName: Schema.String,
+  path: Schema.String,
+  sourceName: Schema.String
+}) {}
+
 export class MissingViewBoxError extends Schema.TaggedErrorClass<MissingViewBoxError>()("MissingViewBoxError", {
   iconName: Schema.String,
   path: Schema.String

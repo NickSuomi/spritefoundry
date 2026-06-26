@@ -1,17 +1,22 @@
 import { basename, join } from "node:path"
 
+import type { IconifyJSON } from "@iconify/types"
+import { getIconData, iconToSVG, replaceIDs } from "@iconify/utils"
 import { Effect, Schema } from "effect"
 
 import {
   ConfigDecodeError,
+  IconifyJsonError,
   InvalidIconReferenceError,
-  MissingCustomSourceError
+  MissingIconifyIconError,
+  MissingIconifySetError
 } from "./errors.js"
 import { SpritefoundryFileSystem } from "./file-system.js"
 import {
   BuildManifest,
   BuildResult,
   CustomSourceConfig,
+  IconifySourceConfig,
   IconSourceMetadata,
   ManifestIcon,
   SpriteAsset,
@@ -35,15 +40,39 @@ const parseRef = (ref: string): Effect.Effect<readonly [string, string], Invalid
 
 const symbolIdFor = (sourceName: string, iconName: string) => `sf-${sourceName}-${iconName}`
 
-const findCustomSource = (
-  sources: ReadonlyArray<CustomSourceConfig>,
+const findIconifySource = (
+  sources: ReadonlyArray<IconifySourceConfig>,
   sourceName: string
-): Effect.Effect<CustomSourceConfig, MissingCustomSourceError> =>
+): Effect.Effect<IconifySourceConfig, MissingIconifySetError> =>
   Effect.suspend(() => {
-    const source = sources.find((candidate: CustomSourceConfig) => candidate.name === sourceName)
+    const source = sources.find((candidate: IconifySourceConfig) => candidate.name === sourceName)
     return source === undefined
-      ? Effect.fail(new MissingCustomSourceError({ sourceName }))
+      ? Effect.fail(
+          new MissingIconifySetError({
+            sourceName,
+            packageName: sourceName,
+            path: "",
+            message: "No Iconify source is configured for this source name"
+          })
+        )
       : Effect.succeed(source)
+  })
+
+const parseIconifyJson = (
+  sourceName: string,
+  packageName: string,
+  path: string,
+  content: string
+): Effect.Effect<IconifyJSON, IconifyJsonError> =>
+  Effect.try({
+    try: () => JSON.parse(content) as IconifyJSON,
+    catch: (error) =>
+      new IconifyJsonError({
+        sourceName,
+        packageName,
+        path,
+        message: error instanceof Error ? error.message : String(error)
+      })
   })
 
 export const buildSpritefoundry = Effect.fn("buildSpritefoundry")(function* (input: unknown) {
@@ -59,9 +88,11 @@ export const buildSpritefoundry = Effect.fn("buildSpritefoundry")(function* (inp
 
   const fs = yield* SpritefoundryFileSystem
   const normalizedDirectory = config.output.normalizedSvgDirectory ?? defaults.normalizedSvgDirectory
+  const projectDirectory = config.output.projectDirectory ?? process.cwd()
   const spriteFile = config.output.spriteFile ?? defaults.spriteFile
   const manifestFile = config.output.manifestFile ?? defaults.manifestFile
   const normalizedOutputDirectory = join(config.output.directory, normalizedDirectory)
+  const iconifySources = config.iconifySources ?? []
 
   yield* fs.makeDirectory(normalizedOutputDirectory)
 
@@ -70,27 +101,76 @@ export const buildSpritefoundry = Effect.fn("buildSpritefoundry")(function* (inp
 
   for (const icon of config.icons) {
     const [sourceName, sourceIconName] = yield* parseRef(icon.ref)
-    const source = yield* findCustomSource(config.customSources, sourceName)
-
-    const sourcePath = join(source.directory, `${sourceIconName}.svg`)
-    const content = yield* fs.readText(sourcePath)
-    const parsed = yield* parseSvg(icon.name, sourcePath, content)
+    const customSource = config.customSources.find((candidate: CustomSourceConfig) => candidate.name === sourceName)
+    const sourcePath = customSource === undefined
+      ? join(projectDirectory, "node_modules", sourceName, "icons.json")
+      : join(customSource.directory, `${sourceIconName}.svg`)
+    const parsed = customSource === undefined
+      ? yield* Effect.gen(function* () {
+          const iconifySource = yield* findIconifySource(iconifySources, sourceName)
+          const packagePath = join(projectDirectory, "node_modules", iconifySource.packageName, "icons.json")
+          const json = yield* fs.readText(packagePath).pipe(
+            Effect.catch((error) =>
+              Effect.fail(
+                new MissingIconifySetError({
+                  sourceName,
+                  packageName: iconifySource.packageName,
+                  path: packagePath,
+                  message: error instanceof Error ? error.message : String(error)
+                })
+              )
+            )
+          )
+          const iconSet = yield* parseIconifyJson(sourceName, iconifySource.packageName, packagePath, json)
+          const iconData = getIconData(iconSet, sourceIconName)
+          if (iconData === null) {
+            return yield* Effect.fail(
+              new MissingIconifyIconError({
+                sourceName,
+                packageName: iconifySource.packageName,
+                icon: sourceIconName
+              })
+            )
+          }
+          const rendered = iconToSVG(iconData)
+          return {
+            source: new IconSourceMetadata({
+              kind: "iconify",
+              name: sourceName,
+              icon: sourceIconName,
+              packageName: iconifySource.packageName,
+              path: packagePath
+            }),
+            svg: {
+              body: replaceIDs(rendered.body),
+              viewBox: rendered.attributes.viewBox
+            }
+          }
+        })
+      : yield* Effect.gen(function* () {
+          const content = yield* fs.readText(sourcePath)
+          const svg = yield* parseSvg(icon.name, sourcePath, content)
+          return {
+            source: new IconSourceMetadata({
+              kind: "custom",
+              name: sourceName,
+              icon: sourceIconName,
+              path: sourcePath
+            }),
+            svg
+          }
+        })
     const symbolId = symbolIdFor(sourceName, sourceIconName)
-    const normalized = normalizeSvg(parsed)
+    const normalized = normalizeSvg(parsed.svg)
 
     yield* fs.writeText(join(normalizedOutputDirectory, `${icon.name}.svg`), normalized)
-    symbols.push(toSymbol(symbolId, parsed))
+    symbols.push(toSymbol(symbolId, parsed.svg))
     icons.push(
       new ManifestIcon({
         name: icon.name,
         symbolId,
-        source: new IconSourceMetadata({
-          kind: "custom",
-          name: sourceName,
-          icon: sourceIconName,
-          path: sourcePath
-        }),
-        viewBox: parsed.viewBox
+        source: parsed.source,
+        viewBox: parsed.svg.viewBox
       })
     )
   }
