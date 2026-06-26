@@ -1,0 +1,24 @@
+{
+  "name": "@nicksuomi/spritefoundry-cli",
+  "version": "0.0.0",
+  "description": "CLI for Spritefoundry.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "bin": {
+    "spritefoundry": "./dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -b tsconfig.json"
+  },
+  "dependencies": {
+    "@nicksuomi/spritefoundry": "workspace:*",
+    "effect": "https://pkg.pr.new/Effect-TS/effect-smol/effect@4c9e6978"
+  }
+}

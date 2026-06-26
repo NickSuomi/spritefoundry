@@ -1,0 +1,28 @@
+{
+  "name": "@nicksuomi/spritefoundry-vite",
+  "version": "0.0.0",
+  "description": "Vite integration for Spritefoundry.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -b tsconfig.json"
+  },
+  "dependencies": {
+    "@nicksuomi/spritefoundry": "workspace:*"
+  },
+  "peerDependencies": {
+    "vite": "^6.4.0 || ^7.0.0 || ^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
+  }
+}

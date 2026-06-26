@@ -1,0 +1,20 @@
+{
+  "name": "@nicksuomi/spritefoundry",
+  "version": "0.0.0",
+  "description": "Effect-first SVG sprite pipeline core.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -b tsconfig.json"
+  },
+  "dependencies": {
+    "effect": "https://pkg.pr.new/Effect-TS/effect-smol/effect@4c9e6978"
+  }
+}

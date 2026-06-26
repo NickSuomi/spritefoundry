@@ -1,0 +1,30 @@
+{
+  "name": "spritefoundry-monorepo",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Effect-first SVG sprite pipeline for Iconify and custom SVG sources.",
+  "type": "module",
+  "packageManager": "pnpm@11.7.0",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NickSuomi/spritefoundry.git"
+  },
+  "bugs": {
+    "url": "https://github.com/NickSuomi/spritefoundry/issues"
+  },
+  "homepage": "https://github.com/NickSuomi/spritefoundry#readme",
+  "scripts": {
+    "build": "pnpm -r --if-present build",
+    "check:private-refs": "node scripts/check-forbidden-terms.mjs",
+    "lint": "pnpm check:private-refs",
+    "test": "pnpm build && node --test \"packages/*/dist/**/*.test.js\"",
+    "typecheck": "tsc -b tsconfig.packages.json"
+  },
+  "devDependencies": {
+    "@effect/language-service": "0.86.2",
+    "@types/node": "25.9.4",
+    "effect": "https://pkg.pr.new/Effect-TS/effect-smol/effect@4c9e6978",
+    "typescript": "6.0.3"
+  }
+}

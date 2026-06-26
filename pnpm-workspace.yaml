@@ -1,0 +1,17 @@
+packages:
+  - packages/*
+allowBuilds:
+  msgpackr-extract: false
+autoInstallPeers: false
+blockExoticSubdeps: true
+dangerouslyAllowAllBuilds: false
+engineStrict: true
+minimumReleaseAge: 10080
+minimumReleaseAgeIgnoreMissingTime: false
+minimumReleaseAgeStrict: true
+preferFrozenLockfile: true
+strictDepBuilds: true
+strictSsl: true
+trustPolicy: no-downgrade
+trustPolicyExclude: []
+verifyStoreIntegrity: true
