@@ -10,7 +10,10 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc -b tsconfig.json"
   },
@@ -24,5 +27,8 @@
     "vite": {
       "optional": true
     }
+  },
+  "devDependencies": {
+    "vite": "8.0.16"
   }
 }

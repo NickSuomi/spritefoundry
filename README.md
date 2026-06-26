@@ -10,6 +10,8 @@ Alpha goals:
 - Provide runtime sprite loading helpers and Vue integration.
 - Keep normal builds offline and runtime fetches limited to app-owned sprite assets.
 
-Status: early scaffold.
+Status: alpha scaffold.
 
 SVG handling policy: [docs/svg-policy.md](docs/svg-policy.md).
+
+Usage guide: [docs/usage.md](docs/usage.md).
