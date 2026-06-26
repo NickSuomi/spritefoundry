@@ -70,6 +70,20 @@ export class MissingViewBoxError extends Schema.TaggedErrorClass<MissingViewBoxE
   path: Schema.String
 }) {}
 
+export class ScannerProposalMismatchError extends Schema.TaggedErrorClass<ScannerProposalMismatchError>()(
+  "ScannerProposalMismatchError",
+  {
+    declaredRef: Schema.optional(Schema.String),
+    iconName: Schema.String,
+    proposedRef: Schema.optional(Schema.String),
+    reason: Schema.Union([
+      Schema.Literal("proposal-only"),
+      Schema.Literal("ref-mismatch"),
+      Schema.Literal("missing-from-proposal")
+    ])
+  }
+) {}
+
 export class SvgParseError extends Schema.TaggedErrorClass<SvgParseError>()("SvgParseError", {
   iconName: Schema.String,
   path: Schema.String,

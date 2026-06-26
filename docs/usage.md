@@ -43,6 +43,15 @@ Create `spritefoundry.config.json`:
       "ref": "brand:logo"
     }
   ],
+  "scanner": {
+    "icons": [
+      {
+        "name": "home",
+        "ref": "lucide:home"
+      }
+    ],
+    "strict": false
+  },
   "output": {
     "directory": "dist/icons"
   }
@@ -50,6 +59,8 @@ Create `spritefoundry.config.json`:
 ```
 
 Custom SVG files must include a numeric `viewBox`. See [SVG policy](svg-policy.md).
+
+`icons` is the source of truth for exported icons. `scanner.icons` is optional proposal validation from any external scanner. Proposal-only icons fail. Ref mismatches fail. With `strict: true`, explicit icons missing from the proposal fail too.
 
 ## CLI
 

@@ -16,6 +16,7 @@ import {
   MissingIconifySetError,
   MissingViewBoxError,
   NodeSpritefoundryFileSystem,
+  ScannerProposalMismatchError,
   SvgParseError,
   UnsafeSvgContentError
 } from "@nicksuomi/spritefoundry"
@@ -197,6 +198,9 @@ const formatError = (error: unknown) => {
   }
   if (error instanceof MissingCustomSourceError) {
     return `MissingCustomSourceError: ${error.sourceName}`
+  }
+  if (error instanceof ScannerProposalMismatchError) {
+    return `ScannerProposalMismatchError: ${error.iconName} ${error.reason}`
   }
   if (error instanceof ConfigDecodeError) {
     return `ConfigDecodeError: ${error.message}`

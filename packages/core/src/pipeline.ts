@@ -12,7 +12,8 @@ import {
   IconifyJsonError,
   InvalidIconReferenceError,
   MissingIconifyIconError,
-  MissingIconifySetError
+  MissingIconifySetError,
+  ScannerProposalMismatchError
 } from "./errors.js"
 import { SpritefoundryFileSystem } from "./file-system.js"
 import {
@@ -24,9 +25,18 @@ import {
   ManifestIcon,
   SpriteAsset,
   SpritefoundryConfig,
+  UsedIconConfig,
   TypesAsset
 } from "./model.js"
-import { namespaceSvgIds, normalizeSvg, parseSvg, safeIdPart, toSymbol, validateSafeSvgContent } from "./svg.js"
+import {
+  namespaceSvgIds,
+  normalizeSvg,
+  parseSvg,
+  type ParsedSvg,
+  safeIdPart,
+  toSymbol,
+  validateSafeSvgContent
+} from "./svg.js"
 
 const defaults = {
   manifestFile: "manifest.json",
@@ -72,6 +82,57 @@ const renderTypes = (icons: ReadonlyArray<ManifestIcon>) => {
   ].join("\n")
 }
 
+const validateScannerProposal = (config: SpritefoundryConfig): Effect.Effect<void, ScannerProposalMismatchError> =>
+  Effect.suspend(() => {
+    const scanner = config.scanner
+    if (scanner === undefined) {
+      return Effect.succeed(undefined)
+    }
+
+    const declaredIcons = new Map(config.icons.map((icon) => [icon.name, icon.ref]))
+    const proposedIcons = new Map(scanner.icons.map((icon) => [icon.name, icon.ref]))
+
+    for (const proposed of scanner.icons) {
+      const declaredRef = declaredIcons.get(proposed.name)
+      if (declaredRef === undefined) {
+        return Effect.fail(
+          new ScannerProposalMismatchError({
+            iconName: proposed.name,
+            proposedRef: proposed.ref,
+            reason: "proposal-only"
+          })
+        )
+      }
+
+      if (proposed.ref !== undefined && proposed.ref !== declaredRef) {
+        return Effect.fail(
+          new ScannerProposalMismatchError({
+            declaredRef,
+            iconName: proposed.name,
+            proposedRef: proposed.ref,
+            reason: "ref-mismatch"
+          })
+        )
+      }
+    }
+
+    if (scanner.strict === true) {
+      for (const declared of config.icons) {
+        if (!proposedIcons.has(declared.name)) {
+          return Effect.fail(
+            new ScannerProposalMismatchError({
+              declaredRef: declared.ref,
+              iconName: declared.name,
+              reason: "missing-from-proposal"
+            })
+          )
+        }
+      }
+    }
+
+    return Effect.succeed(undefined)
+  })
+
 const findIconifySource = (
   sources: ReadonlyArray<IconifySourceConfig>,
   sourceName: string
@@ -107,6 +168,124 @@ const parseIconifyJson = (
       })
   })
 
+interface IconResolutionRequest {
+  readonly config: SpritefoundryConfig
+  readonly icon: UsedIconConfig
+  readonly iconifySources: ReadonlyArray<IconifySourceConfig>
+  readonly projectDirectory: string
+  readonly sourceIconName: string
+  readonly sourceName: string
+  readonly symbolId: string
+}
+
+interface ResolvedIconSource {
+  readonly source: IconSourceMetadata
+  readonly svg: ParsedSvg
+}
+
+const resolveCustomIcon = Effect.fn("resolveCustomIcon")(function* (request: IconResolutionRequest) {
+  const fs = yield* SpritefoundryFileSystem
+  const customSource = request.config.customSources.find(
+    (candidate: CustomSourceConfig) => candidate.name === request.sourceName
+  )
+  if (customSource === undefined) {
+    return yield* Effect.fail(
+      new MissingIconifySetError({
+        sourceName: request.sourceName,
+        packageName: request.sourceName,
+        path: "",
+        message: "No custom source is configured for this source name"
+      })
+    )
+  }
+
+  const sourcePath = join(customSource.directory, `${request.sourceIconName}.svg`)
+  const content = yield* fs.readText(sourcePath)
+  const svg = namespaceSvgIds(yield* parseSvg(request.icon.name, sourcePath, content), request.symbolId)
+
+  return {
+    source: new IconSourceMetadata({
+      kind: "custom",
+      name: request.sourceName,
+      icon: request.sourceIconName,
+      path: sourcePath
+    }),
+    svg
+  } satisfies ResolvedIconSource
+})
+
+const resolveIconifyIcon = Effect.fn("resolveIconifyIcon")(function* (request: IconResolutionRequest) {
+  const fs = yield* SpritefoundryFileSystem
+  const iconifySource = yield* findIconifySource(request.iconifySources, request.sourceName)
+  const packagePath = join(request.projectDirectory, "node_modules", iconifySource.packageName, "icons.json")
+  const json = yield* fs.readText(packagePath).pipe(
+    Effect.catch((error) =>
+      Effect.fail(
+        new MissingIconifySetError({
+          sourceName: request.sourceName,
+          packageName: iconifySource.packageName,
+          path: packagePath,
+          message: error instanceof Error ? error.message : String(error)
+        })
+      )
+    )
+  )
+  const iconSet = yield* parseIconifyJson(request.sourceName, iconifySource.packageName, packagePath, json)
+  const iconData = getIconData(iconSet, request.sourceIconName)
+  if (iconData === null) {
+    return yield* Effect.fail(
+      new MissingIconifyIconError({
+        sourceName: request.sourceName,
+        packageName: iconifySource.packageName,
+        icon: request.sourceIconName
+      })
+    )
+  }
+
+  const rendered = iconToSVG(iconData)
+  yield* validateSafeSvgContent(request.icon.name, packagePath, rendered.body)
+
+  return {
+    source: new IconSourceMetadata({
+      kind: "iconify",
+      name: request.sourceName,
+      icon: request.sourceIconName,
+      packageName: iconifySource.packageName,
+      path: packagePath
+    }),
+    svg: namespaceSvgIds(
+      {
+        body: rendered.body,
+        viewBox: rendered.attributes.viewBox
+      },
+      request.symbolId
+    )
+  } satisfies ResolvedIconSource
+})
+
+const sourceResolvers = [
+  {
+    kind: "custom",
+    canResolve: (request: IconResolutionRequest) =>
+      request.config.customSources.some((candidate) => candidate.name === request.sourceName),
+    resolve: resolveCustomIcon
+  },
+  {
+    kind: "iconify",
+    canResolve: () => true,
+    resolve: resolveIconifyIcon
+  }
+] as const
+
+const resolveIconSource = Effect.fn("resolveIconSource")(function* (request: IconResolutionRequest) {
+  const resolver = sourceResolvers.find((candidate) => candidate.canResolve(request))
+  if (resolver === undefined) {
+    return yield* Effect.fail(new InvalidIconReferenceError({ ref: request.icon.ref }))
+  }
+
+  return yield* resolver.resolve(request)
+})
+
 export const buildSpritefoundry = Effect.fn("buildSpritefoundry")(function* (input: unknown) {
   const config = yield* Schema.decodeUnknownEffect(SpritefoundryConfig)(input).pipe(
     Effect.catch((error: unknown) =>
@@ -119,6 +298,8 @@ export const buildSpritefoundry = Effect.fn("buildSpritefoundry")(function* (inp
   )
 
   const fs = yield* SpritefoundryFileSystem
+  yield* validateScannerProposal(config)
+
   const normalizedDirectory = config.output.normalizedSvgDirectory ?? defaults.normalizedSvgDirectory
   const projectDirectory = config.output.projectDirectory ?? process.cwd()
   const spriteFile = config.output.spriteFile ?? defaults.spriteFile
@@ -161,69 +342,15 @@ export const buildSpritefoundry = Effect.fn("buildSpritefoundry")(function* (inp
     }
 
     symbolIds.set(symbolId, icon.ref)
-    const customSource = config.customSources.find((candidate: CustomSourceConfig) => candidate.name === sourceName)
-    const sourcePath = customSource === undefined
-      ? join(projectDirectory, "node_modules", sourceName, "icons.json")
-      : join(customSource.directory, `${sourceIconName}.svg`)
-    const parsed = customSource === undefined
-      ? yield* Effect.gen(function* () {
-          const iconifySource = yield* findIconifySource(iconifySources, sourceName)
-          const packagePath = join(projectDirectory, "node_modules", iconifySource.packageName, "icons.json")
-          const json = yield* fs.readText(packagePath).pipe(
-            Effect.catch((error) =>
-              Effect.fail(
-                new MissingIconifySetError({
-                  sourceName,
-                  packageName: iconifySource.packageName,
-                  path: packagePath,
-                  message: error instanceof Error ? error.message : String(error)
-                })
-              )
-            )
-          )
-          const iconSet = yield* parseIconifyJson(sourceName, iconifySource.packageName, packagePath, json)
-          const iconData = getIconData(iconSet, sourceIconName)
-          if (iconData === null) {
-            return yield* Effect.fail(
-              new MissingIconifyIconError({
-                sourceName,
-                packageName: iconifySource.packageName,
-                icon: sourceIconName
-              })
-            )
-          }
-          const rendered = iconToSVG(iconData)
-          yield* validateSafeSvgContent(icon.name, packagePath, rendered.body)
-          return {
-            source: new IconSourceMetadata({
-              kind: "iconify",
-              name: sourceName,
-              icon: sourceIconName,
-              packageName: iconifySource.packageName,
-              path: packagePath
-            }),
-            svg: namespaceSvgIds(
-              {
-                body: rendered.body,
-                viewBox: rendered.attributes.viewBox
-              },
-              symbolId
-            )
-          }
-        })
-      : yield* Effect.gen(function* () {
-          const content = yield* fs.readText(sourcePath)
-          const svg = namespaceSvgIds(yield* parseSvg(icon.name, sourcePath, content), symbolId)
-          return {
-            source: new IconSourceMetadata({
-              kind: "custom",
-              name: sourceName,
-              icon: sourceIconName,
-              path: sourcePath
-            }),
-            svg
-          }
-        })
+    const parsed = yield* resolveIconSource({
+      config,
+      icon,
+      iconifySources,
+      projectDirectory,
+      sourceIconName,
+      sourceName,
+      symbolId
+    })
     const normalized = normalizeSvg(parsed.svg)
 
     yield* fs.writeText(join(normalizedOutputDirectory, `${icon.name}.svg`), normalized)

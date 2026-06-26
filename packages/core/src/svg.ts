@@ -7,7 +7,7 @@ export interface ParsedSvg {
   readonly viewBox: string
 }
 
-const svgPattern = /<svg\b([^>]*)>([\s\S]*?)<\/svg>/i
+const svgPattern = /^\s*<svg\b([^>]*)>([\s\S]*?)<\/svg>\s*$/i
 const viewBoxPattern = /\bviewBox\s*=\s*(["'])(.*?)\1/i
 const idAttributePattern = /\bid\s*=\s*(["'])([^"']+)\1/g
 const localHrefPattern = /\b(?:href|xlink:href)\s*=\s*(["'])#([^"']+)\1/g
@@ -15,6 +15,7 @@ const quotedFragmentPattern = /(["'])#([^"']+)\1/g
 const forbiddenElementPattern = /<\s*(?:script|foreignObject|iframe|object|embed|image|audio|video|canvas|style)\b/i
 const forbiddenEventAttributePattern = /\son[a-z][\w:-]*\s*=/i
 const forbiddenExternalReferencePattern = /\b(?:href|xlink:href)\s*=\s*(["'])(?!#)[^"']+\1/i
+const forbiddenExternalUrlPattern = /url\(\s*(?:(["'])(?!#)[^"']+\1|(?![#"'])[^)]*)\s*\)/i
 const forbiddenSourceAttributePattern = /\s(?:src|poster)\s*=\s*(["'])[^"']+\1/i
 const forbiddenStyleAttributePattern = /\sstyle\s*=/i
 const forbiddenDoctypePattern = /<!doctype|<!entity/i
@@ -56,6 +57,7 @@ export const validateSafeSvgContent = (
     [forbiddenElementPattern, "script, foreignObject, embedded media, and style elements are not allowed"],
     [forbiddenEventAttributePattern, "event handler attributes are not allowed"],
     [forbiddenExternalReferencePattern, "external href references are not allowed"],
+    [forbiddenExternalUrlPattern, "external url references are not allowed"],
     [forbiddenSourceAttributePattern, "external source attributes are not allowed"],
     [forbiddenStyleAttributePattern, "style attributes are not allowed"]
   ]
@@ -113,23 +115,24 @@ export const parseSvg = (
   path: string,
   content: string
 ): Effect.Effect<ParsedSvg, MissingViewBoxError | SvgParseError | UnsafeSvgContentError> => {
-  const svg = svgPattern.exec(content)
-  if (svg === null) {
-    return Effect.fail(new SvgParseError({ iconName, path, message: "Expected one <svg> root element" }))
-  }
-
-  const attributes = svg[1] ?? ""
-  const body = (svg[2] ?? "").trim()
-  const viewBox = viewBoxPattern.exec(attributes)
-  const viewBoxValue = viewBox?.[2]
-
-  if (viewBoxValue === undefined) {
-    return Effect.fail(new MissingViewBoxError({ iconName, path }))
-  }
-
   return Effect.gen(function* () {
+    yield* validateSafeSvgContent(iconName, path, content)
+
+    const svg = svgPattern.exec(content)
+    if (svg === null) {
+      return yield* Effect.fail(new SvgParseError({ iconName, path, message: "Expected one <svg> root element" }))
+    }
+
+    const attributes = svg[1] ?? ""
+    const body = (svg[2] ?? "").trim()
+    const viewBox = viewBoxPattern.exec(attributes)
+    const viewBoxValue = viewBox?.[2]
+
+    if (viewBoxValue === undefined) {
+      return yield* Effect.fail(new MissingViewBoxError({ iconName, path }))
+    }
+
     const normalizedViewBox = yield* validateViewBox(iconName, path, viewBoxValue)
-    yield* validateSafeSvgContent(iconName, path, `${attributes}${body}`)
 
     return {
       body,

@@ -15,6 +15,8 @@ import {
   MissingIconifySetError,
   MissingViewBoxError,
   NodeSpritefoundryFileSystem,
+  ScannerProposalMismatchError,
+  SvgParseError,
   UnsafeSvgContentError
 } from "./index.js"
 
@@ -108,6 +110,174 @@ describe("getSpritefoundryInfo", () => {
         }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer))
       ),
       (error) => error instanceof UnsafeSvgContentError && error.reason.includes("script")
+    )
+  })
+
+  void it("rejects unsafe SVG content outside the root element", async () => {
+    const root = await mkdtemp(join(tmpdir(), "spritefoundry-"))
+    const iconsDir = join(root, "icons")
+    await mkdir(iconsDir)
+    await writeFile(
+      join(iconsDir, "logo.svg"),
+      '<svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/></svg><script>alert("x")</script>'
+    )
+
+    await assert.rejects(
+      Effect.runPromise(
+        buildSpritefoundry({
+          customSources: [{ name: "custom", directory: iconsDir }],
+          icons: [{ name: "logo", ref: "custom:logo" }],
+          output: { directory: join(root, "dist") }
+        }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer))
+      ),
+      (error) => error instanceof UnsafeSvgContentError && error.reason.includes("script")
+    )
+  })
+
+  void it("rejects extra non-whitespace content outside the root SVG", async () => {
+    const root = await mkdtemp(join(tmpdir(), "spritefoundry-"))
+    const iconsDir = join(root, "icons")
+    await mkdir(iconsDir)
+    await writeFile(
+      join(iconsDir, "logo.svg"),
+      '<svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/></svg><span></span>'
+    )
+
+    await assert.rejects(
+      Effect.runPromise(
+        buildSpritefoundry({
+          customSources: [{ name: "custom", directory: iconsDir }],
+          icons: [{ name: "logo", ref: "custom:logo" }],
+          output: { directory: join(root, "dist") }
+        }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer))
+      ),
+      (error) => error instanceof SvgParseError && error.message === "Expected one <svg> root element"
+    )
+  })
+
+  void it("rejects external url references in SVG attributes", async () => {
+    const root = await mkdtemp(join(tmpdir(), "spritefoundry-"))
+    const iconsDir = join(root, "icons")
+    await mkdir(iconsDir)
+    await writeFile(
+      join(iconsDir, "logo.svg"),
+      '<svg viewBox="0 0 24 24"><path fill="url(https://example.com/pattern.svg#x)" d="M4 4h16v16H4z"/></svg>'
+    )
+
+    await assert.rejects(
+      Effect.runPromise(
+        buildSpritefoundry({
+          customSources: [{ name: "custom", directory: iconsDir }],
+          icons: [{ name: "logo", ref: "custom:logo" }],
+          output: { directory: join(root, "dist") }
+        }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer))
+      ),
+      (error) => error instanceof UnsafeSvgContentError && error.reason.includes("external url")
+    )
+  })
+
+  void it("fails when scanner proposal contains an undeclared icon", async () => {
+    const root = await mkdtemp(join(tmpdir(), "spritefoundry-"))
+    const iconsDir = join(root, "icons")
+    await mkdir(iconsDir)
+    await writeFile(join(iconsDir, "logo.svg"), '<svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/></svg>')
+
+    await assert.rejects(
+      Effect.runPromise(
+        buildSpritefoundry({
+          customSources: [{ name: "custom", directory: iconsDir }],
+          icons: [{ name: "logo", ref: "custom:logo" }],
+          output: { directory: join(root, "dist") },
+          scanner: {
+            icons: [
+              { name: "logo", ref: "custom:logo" },
+              { name: "unused", ref: "custom:unused" }
+            ]
+          }
+        }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer))
+      ),
+      (error) =>
+        error instanceof ScannerProposalMismatchError &&
+        error.iconName === "unused" &&
+        error.reason === "proposal-only"
+    )
+  })
+
+  void it("fails when strict scanner proposal misses a declared icon", async () => {
+    const root = await mkdtemp(join(tmpdir(), "spritefoundry-"))
+    const iconsDir = join(root, "icons")
+    await mkdir(iconsDir)
+    await writeFile(join(iconsDir, "logo.svg"), '<svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/></svg>')
+    await writeFile(join(iconsDir, "menu.svg"), '<svg viewBox="0 0 24 24"><path d="M2 4h20M2 12h20"/></svg>')
+
+    await assert.rejects(
+      Effect.runPromise(
+        buildSpritefoundry({
+          customSources: [{ name: "custom", directory: iconsDir }],
+          icons: [
+            { name: "logo", ref: "custom:logo" },
+            { name: "menu", ref: "custom:menu" }
+          ],
+          output: { directory: join(root, "dist") },
+          scanner: {
+            icons: [{ name: "logo", ref: "custom:logo" }],
+            strict: true
+          }
+        }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer))
+      ),
+      (error) =>
+        error instanceof ScannerProposalMismatchError &&
+        error.iconName === "menu" &&
+        error.reason === "missing-from-proposal"
+    )
+  })
+
+  void it("keeps explicit icon config as source of truth when scanner proposal is non-strict", async () => {
+    const root = await mkdtemp(join(tmpdir(), "spritefoundry-"))
+    const iconsDir = join(root, "icons")
+    const outDir = join(root, "dist")
+    await mkdir(iconsDir)
+    await writeFile(join(iconsDir, "logo.svg"), '<svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/></svg>')
+    await writeFile(join(iconsDir, "menu.svg"), '<svg viewBox="0 0 24 24"><path d="M2 4h20M2 12h20"/></svg>')
+
+    const result = await Effect.runPromise(
+      buildSpritefoundry({
+        customSources: [{ name: "custom", directory: iconsDir }],
+        icons: [
+          { name: "logo", ref: "custom:logo" },
+          { name: "menu", ref: "custom:menu" }
+        ],
+        output: { directory: outDir },
+        scanner: {
+          icons: [{ name: "logo", ref: "custom:logo" }]
+        }
+      }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer))
+    )
+
+    assert.deepEqual(result.icons.map((icon) => icon.name), ["logo", "menu"])
+  })
+
+  void it("fails when scanner proposal ref disagrees with explicit icon config", async () => {
+    const root = await mkdtemp(join(tmpdir(), "spritefoundry-"))
+    const iconsDir = join(root, "icons")
+    await mkdir(iconsDir)
+    await writeFile(join(iconsDir, "logo.svg"), '<svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/></svg>')
+
+    await assert.rejects(
+      Effect.runPromise(
+        buildSpritefoundry({
+          customSources: [{ name: "custom", directory: iconsDir }],
+          icons: [{ name: "logo", ref: "custom:logo" }],
+          output: { directory: join(root, "dist") },
+          scanner: {
+            icons: [{ name: "logo", ref: "custom:other" }]
+          }
+        }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer))
+      ),
+      (error) =>
+        error instanceof ScannerProposalMismatchError &&
+        error.iconName === "logo" &&
+        error.reason === "ref-mismatch"
     )
   })
 

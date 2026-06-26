@@ -15,6 +15,16 @@ export class UsedIconConfig extends Schema.Class<UsedIconConfig>("UsedIconConfig
   ref: Schema.String
 }) {}
 
+export class ScannerIconProposal extends Schema.Class<ScannerIconProposal>("ScannerIconProposal")({
+  name: Schema.String,
+  ref: Schema.optional(Schema.String)
+}) {}
+
+export class ScannerProposalConfig extends Schema.Class<ScannerProposalConfig>("ScannerProposalConfig")({
+  icons: Schema.Array(ScannerIconProposal),
+  strict: Schema.optional(Schema.Boolean)
+}) {}
+
 export class OutputConfig extends Schema.Class<OutputConfig>("OutputConfig")({
   directory: Schema.String,
   manifestFile: Schema.optional(Schema.String),
@@ -28,7 +38,8 @@ export class SpritefoundryConfig extends Schema.Class<SpritefoundryConfig>("Spri
   customSources: Schema.Array(CustomSourceConfig),
   iconifySources: Schema.optional(Schema.Array(IconifySourceConfig)),
   icons: Schema.Array(UsedIconConfig),
-  output: OutputConfig
+  output: OutputConfig,
+  scanner: Schema.optional(ScannerProposalConfig)
 }) {}
 
 export class IconSourceMetadata extends Schema.Class<IconSourceMetadata>("IconSourceMetadata")({
