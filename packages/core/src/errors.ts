@@ -4,6 +4,24 @@ export class ConfigDecodeError extends Schema.TaggedErrorClass<ConfigDecodeError
   message: Schema.String
 }) {}
 
+export class IconNameCollisionError extends Schema.TaggedErrorClass<IconNameCollisionError>()(
+  "IconNameCollisionError",
+  {
+    firstRef: Schema.String,
+    iconName: Schema.String,
+    secondRef: Schema.String
+  }
+) {}
+
+export class IconSymbolCollisionError extends Schema.TaggedErrorClass<IconSymbolCollisionError>()(
+  "IconSymbolCollisionError",
+  {
+    firstRef: Schema.String,
+    secondRef: Schema.String,
+    symbolId: Schema.String
+  }
+) {}
+
 export class FileSystemError extends Schema.TaggedErrorClass<FileSystemError>()("FileSystemError", {
   operation: Schema.String,
   path: Schema.String,
@@ -57,3 +75,12 @@ export class SvgParseError extends Schema.TaggedErrorClass<SvgParseError>()("Svg
   path: Schema.String,
   message: Schema.String
 }) {}
+
+export class UnsafeSvgContentError extends Schema.TaggedErrorClass<UnsafeSvgContentError>()(
+  "UnsafeSvgContentError",
+  {
+    iconName: Schema.String,
+    path: Schema.String,
+    reason: Schema.String
+  }
+) {}

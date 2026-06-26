@@ -11,3 +11,5 @@ Alpha goals:
 - Keep normal builds offline and runtime fetches limited to app-owned sprite assets.
 
 Status: early scaffold.
+
+SVG handling policy: [docs/svg-policy.md](docs/svg-policy.md).

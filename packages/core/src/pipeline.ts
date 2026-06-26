@@ -1,11 +1,13 @@
 import { basename, join } from "node:path"
 
 import type { IconifyJSON } from "@iconify/types"
-import { getIconData, iconToSVG, replaceIDs } from "@iconify/utils"
+import { getIconData, iconToSVG } from "@iconify/utils"
 import { Effect, Schema } from "effect"
 
 import {
   ConfigDecodeError,
+  IconNameCollisionError,
+  IconSymbolCollisionError,
   IconifyJsonError,
   InvalidIconReferenceError,
   MissingIconifyIconError,
@@ -22,7 +24,7 @@ import {
   SpriteAsset,
   SpritefoundryConfig
 } from "./model.js"
-import { normalizeSvg, parseSvg, toSymbol } from "./svg.js"
+import { namespaceSvgIds, normalizeSvg, parseSvg, safeIdPart, toSymbol, validateSafeSvgContent } from "./svg.js"
 
 const defaults = {
   manifestFile: "manifest.json",
@@ -38,7 +40,7 @@ const parseRef = (ref: string): Effect.Effect<readonly [string, string], Invalid
       : Effect.succeed([ref.slice(0, separator), ref.slice(separator + 1)] as const)
   })
 
-const symbolIdFor = (sourceName: string, iconName: string) => `sf-${sourceName}-${iconName}`
+const symbolIdFor = (sourceName: string, iconName: string) => `sf-${safeIdPart(sourceName)}-${safeIdPart(iconName)}`
 
 const findIconifySource = (
   sources: ReadonlyArray<IconifySourceConfig>,
@@ -98,9 +100,36 @@ export const buildSpritefoundry = Effect.fn("buildSpritefoundry")(function* (inp
 
   const icons: Array<ManifestIcon> = []
   const symbols: Array<string> = []
+  const iconNames = new Map<string, string>()
+  const symbolIds = new Map<string, string>()
 
   for (const icon of config.icons) {
     const [sourceName, sourceIconName] = yield* parseRef(icon.ref)
+    const existingIconNameRef = iconNames.get(icon.name)
+    if (existingIconNameRef !== undefined) {
+      return yield* Effect.fail(
+        new IconNameCollisionError({
+          firstRef: existingIconNameRef,
+          iconName: icon.name,
+          secondRef: icon.ref
+        })
+      )
+    }
+
+    iconNames.set(icon.name, icon.ref)
+    const symbolId = symbolIdFor(sourceName, sourceIconName)
+    const existingSymbolRef = symbolIds.get(symbolId)
+    if (existingSymbolRef !== undefined) {
+      return yield* Effect.fail(
+        new IconSymbolCollisionError({
+          firstRef: existingSymbolRef,
+          secondRef: icon.ref,
+          symbolId
+        })
+      )
+    }
+
+    symbolIds.set(symbolId, icon.ref)
     const customSource = config.customSources.find((candidate: CustomSourceConfig) => candidate.name === sourceName)
     const sourcePath = customSource === undefined
       ? join(projectDirectory, "node_modules", sourceName, "icons.json")
@@ -133,6 +162,7 @@ export const buildSpritefoundry = Effect.fn("buildSpritefoundry")(function* (inp
             )
           }
           const rendered = iconToSVG(iconData)
+          yield* validateSafeSvgContent(icon.name, packagePath, rendered.body)
           return {
             source: new IconSourceMetadata({
               kind: "iconify",
@@ -141,15 +171,18 @@ export const buildSpritefoundry = Effect.fn("buildSpritefoundry")(function* (inp
               packageName: iconifySource.packageName,
               path: packagePath
             }),
-            svg: {
-              body: replaceIDs(rendered.body),
-              viewBox: rendered.attributes.viewBox
-            }
+            svg: namespaceSvgIds(
+              {
+                body: rendered.body,
+                viewBox: rendered.attributes.viewBox
+              },
+              symbolId
+            )
           }
         })
       : yield* Effect.gen(function* () {
           const content = yield* fs.readText(sourcePath)
-          const svg = yield* parseSvg(icon.name, sourcePath, content)
+          const svg = namespaceSvgIds(yield* parseSvg(icon.name, sourcePath, content), symbolId)
           return {
             source: new IconSourceMetadata({
               kind: "custom",
@@ -160,7 +193,6 @@ export const buildSpritefoundry = Effect.fn("buildSpritefoundry")(function* (inp
             svg
           }
         })
-    const symbolId = symbolIdFor(sourceName, sourceIconName)
     const normalized = normalizeSvg(parsed.svg)
 
     yield* fs.writeText(join(normalizedOutputDirectory, `${icon.name}.svg`), normalized)
