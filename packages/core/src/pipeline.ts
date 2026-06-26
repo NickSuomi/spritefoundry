@@ -1,4 +1,5 @@
-import { basename, join } from "node:path"
+import { createHash } from "node:crypto"
+import { extname, join } from "node:path"
 
 import type { IconifyJSON } from "@iconify/types"
 import { getIconData, iconToSVG } from "@iconify/utils"
@@ -22,14 +23,16 @@ import {
   IconSourceMetadata,
   ManifestIcon,
   SpriteAsset,
-  SpritefoundryConfig
+  SpritefoundryConfig,
+  TypesAsset
 } from "./model.js"
 import { namespaceSvgIds, normalizeSvg, parseSvg, safeIdPart, toSymbol, validateSafeSvgContent } from "./svg.js"
 
 const defaults = {
   manifestFile: "manifest.json",
   normalizedSvgDirectory: "svg",
-  spriteFile: "sprite.svg"
+  spriteFile: "sprite.svg",
+  typesFile: "icons.d.ts"
 } as const
 
 const parseRef = (ref: string): Effect.Effect<readonly [string, string], InvalidIconReferenceError> =>
@@ -41,6 +44,33 @@ const parseRef = (ref: string): Effect.Effect<readonly [string, string], Invalid
   })
 
 const symbolIdFor = (sourceName: string, iconName: string) => `sf-${safeIdPart(sourceName)}-${safeIdPart(iconName)}`
+
+const hashContent = (content: string) => createHash("sha256").update(content).digest("hex").slice(0, 12)
+
+const hashedFileName = (fileName: string, hash: string) => {
+  const extension = extname(fileName)
+  if (extension.length === 0) {
+    return `${fileName}.${hash}`
+  }
+
+  return `${fileName.slice(0, -extension.length)}.${hash}${extension}`
+}
+
+const renderTypes = (icons: ReadonlyArray<ManifestIcon>) => {
+  const iconNameUnion = icons.length === 0 ? "never" : icons.map((icon) => JSON.stringify(icon.name)).join(" | ")
+
+  return [
+    `export type SpritefoundryIconName = ${iconNameUnion}`,
+    "",
+    "export interface SpritefoundryIconManifestEntry {",
+    "  readonly symbolId: string",
+    "  readonly viewBox: string",
+    "}",
+    "",
+    "export type SpritefoundryIconManifest = Record<SpritefoundryIconName, SpritefoundryIconManifestEntry>",
+    ""
+  ].join("\n")
+}
 
 const findIconifySource = (
   sources: ReadonlyArray<IconifySourceConfig>,
@@ -93,6 +123,7 @@ export const buildSpritefoundry = Effect.fn("buildSpritefoundry")(function* (inp
   const projectDirectory = config.output.projectDirectory ?? process.cwd()
   const spriteFile = config.output.spriteFile ?? defaults.spriteFile
   const manifestFile = config.output.manifestFile ?? defaults.manifestFile
+  const typesFile = config.output.typesFile ?? defaults.typesFile
   const normalizedOutputDirectory = join(config.output.directory, normalizedDirectory)
   const iconifySources = config.iconifySources ?? []
 
@@ -207,25 +238,32 @@ export const buildSpritefoundry = Effect.fn("buildSpritefoundry")(function* (inp
     )
   }
 
+  const spriteContent = `<svg xmlns="http://www.w3.org/2000/svg">${symbols.join("")}</svg>\n`
+  const spriteHash = hashContent(spriteContent)
+  const spriteFileName = hashedFileName(spriteFile, spriteHash)
   const sprite = new SpriteAsset({
-    fileName: spriteFile,
-    path: join(config.output.directory, spriteFile)
+    fileName: spriteFileName,
+    hash: spriteHash,
+    path: join(config.output.directory, spriteFileName),
+    publicPath: spriteFileName
+  })
+  const types = new TypesAsset({
+    fileName: typesFile,
+    path: join(config.output.directory, typesFile)
   })
   const manifest = new BuildManifest({
     icons: Object.fromEntries(icons.map((icon) => [icon.name, icon])),
     sprite
   })
-  const spriteContent = `<svg xmlns="http://www.w3.org/2000/svg">${symbols.join("")}</svg>\n`
 
   yield* fs.writeText(sprite.path, spriteContent)
+  yield* fs.writeText(types.path, renderTypes(icons))
   yield* fs.writeText(join(config.output.directory, manifestFile), `${JSON.stringify(manifest, null, 2)}\n`)
 
   return new BuildResult({
     icons,
     manifest,
-    sprite: new SpriteAsset({
-      fileName: basename(sprite.path),
-      path: sprite.path
-    })
+    sprite,
+    types
   })
 })

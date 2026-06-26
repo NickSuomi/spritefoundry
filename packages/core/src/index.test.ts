@@ -48,7 +48,8 @@ describe("getSpritefoundryInfo", () => {
       }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer))
     )
 
-    assert.equal(result.sprite.fileName, "sprite.svg")
+    assert.match(result.sprite.fileName, /^sprite\.[a-f0-9]{12}\.svg$/)
+    assert.match(result.sprite.hash, /^[a-f0-9]{12}$/)
     assert.equal(result.icons[0]?.symbolId, "sf-custom-logo")
 
     const normalized = await readFile(join(outDir, "svg", "logo.svg"), "utf8")
@@ -57,12 +58,18 @@ describe("getSpritefoundryInfo", () => {
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/></svg>\n'
     )
 
-    const sprite = await readFile(join(outDir, "sprite.svg"), "utf8")
+    const sprite = await readFile(result.sprite.path, "utf8")
     assert.match(sprite, /<symbol id="sf-custom-logo" viewBox="0 0 24 24">/)
 
     const manifest = JSON.parse(await readFile(join(outDir, "manifest.json"), "utf8"))
     assert.equal(manifest.icons.logo.symbolId, "sf-custom-logo")
     assert.equal(manifest.icons.logo.source.kind, "custom")
+    assert.equal(manifest.sprite.fileName, result.sprite.fileName)
+    assert.equal(manifest.sprite.hash, result.sprite.hash)
+    assert.equal(manifest.sprite.publicPath, result.sprite.fileName)
+
+    const types = await readFile(result.types.path, "utf8")
+    assert.match(types, /export type SpritefoundryIconName = "logo"/)
   })
 
   void it("fails with typed error when custom SVG lacks viewBox", async () => {
@@ -162,18 +169,49 @@ describe("getSpritefoundryInfo", () => {
       '<svg viewBox="0 0 24 24"><defs><clipPath id="clip"><path d="M0 0h24v24H0z"/></clipPath></defs><g clip-path="url(#clip)"><path d="M4 4h16v16H4z"/></g></svg>'
     )
 
-    await Effect.runPromise(buildSpritefoundry(config).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer)))
+    const firstResult = await Effect.runPromise(
+      buildSpritefoundry(config).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer))
+    )
     const firstNormalized = await readFile(join(outDir, "svg", "logo.svg"), "utf8")
-    const firstSprite = await readFile(join(outDir, "sprite.svg"), "utf8")
+    const firstSprite = await readFile(firstResult.sprite.path, "utf8")
 
-    await Effect.runPromise(buildSpritefoundry(config).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer)))
+    const secondResult = await Effect.runPromise(
+      buildSpritefoundry(config).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer))
+    )
     const secondNormalized = await readFile(join(outDir, "svg", "logo.svg"), "utf8")
-    const secondSprite = await readFile(join(outDir, "sprite.svg"), "utf8")
+    const secondSprite = await readFile(secondResult.sprite.path, "utf8")
 
+    assert.equal(firstResult.sprite.hash, secondResult.sprite.hash)
+    assert.equal(firstResult.sprite.fileName, secondResult.sprite.fileName)
     assert.equal(firstNormalized, secondNormalized)
     assert.equal(firstSprite, secondSprite)
     assert.match(firstSprite, /id="sf-custom-logo-clip"/)
     assert.match(firstSprite, /url\(#sf-custom-logo-clip\)/)
+  })
+
+  void it("changes sprite hash when icon content changes", async () => {
+    const root = await mkdtemp(join(tmpdir(), "spritefoundry-"))
+    const iconsDir = join(root, "icons")
+    const outDir = join(root, "dist")
+    const iconPath = join(iconsDir, "logo.svg")
+    const config = {
+      customSources: [{ name: "custom", directory: iconsDir }],
+      icons: [{ name: "logo", ref: "custom:logo" }],
+      output: { directory: outDir }
+    }
+    await mkdir(iconsDir)
+    await writeFile(iconPath, '<svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/></svg>')
+    const firstResult = await Effect.runPromise(
+      buildSpritefoundry(config).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer))
+    )
+
+    await writeFile(iconPath, '<svg viewBox="0 0 24 24"><path d="M2 2h20v20H2z"/></svg>')
+    const secondResult = await Effect.runPromise(
+      buildSpritefoundry(config).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer))
+    )
+
+    assert.notEqual(firstResult.sprite.hash, secondResult.sprite.hash)
+    assert.notEqual(firstResult.sprite.fileName, secondResult.sprite.fileName)
   })
 
   void it("builds normalized SVG, sprite, and manifest for an installed Iconify JSON set", async () => {

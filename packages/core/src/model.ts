@@ -20,7 +20,8 @@ export class OutputConfig extends Schema.Class<OutputConfig>("OutputConfig")({
   manifestFile: Schema.optional(Schema.String),
   normalizedSvgDirectory: Schema.optional(Schema.String),
   projectDirectory: Schema.optional(Schema.String),
-  spriteFile: Schema.optional(Schema.String)
+  spriteFile: Schema.optional(Schema.String),
+  typesFile: Schema.optional(Schema.String)
 }) {}
 
 export class SpritefoundryConfig extends Schema.Class<SpritefoundryConfig>("SpritefoundryConfig")({
@@ -47,6 +48,13 @@ export class ManifestIcon extends Schema.Class<ManifestIcon>("ManifestIcon")({
 
 export class SpriteAsset extends Schema.Class<SpriteAsset>("SpriteAsset")({
   fileName: Schema.String,
+  hash: Schema.String,
+  path: Schema.String,
+  publicPath: Schema.String
+}) {}
+
+export class TypesAsset extends Schema.Class<TypesAsset>("TypesAsset")({
+  fileName: Schema.String,
   path: Schema.String
 }) {}
 
@@ -58,5 +66,6 @@ export class BuildManifest extends Schema.Class<BuildManifest>("BuildManifest")(
 export class BuildResult extends Schema.Class<BuildResult>("BuildResult")({
   icons: Schema.Array(ManifestIcon),
   manifest: BuildManifest,
-  sprite: SpriteAsset
+  sprite: SpriteAsset,
+  types: TypesAsset
 }) {}
