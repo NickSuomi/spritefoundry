@@ -4,6 +4,7 @@ export * from "./errors.js"
 export * from "./file-system.js"
 export * from "./model.js"
 export * from "./pipeline.js"
+export * from "./runtime.js"
 
 export class SpritefoundryInfo extends Schema.Class<SpritefoundryInfo>("SpritefoundryInfo")({
   effectLine: Schema.Literal("effect-v4-beta"),
