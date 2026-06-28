@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { realpathSync } from "node:fs"
 import { readFile } from "node:fs/promises"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -262,7 +263,15 @@ export const runSpritefoundryCli = (options: RunSpritefoundryCliOptions) =>
 
 const isEntrypoint = () => {
   const entry = process.argv[1]
-  return entry !== undefined && resolve(entry) === fileURLToPath(import.meta.url)
+  return entry !== undefined && realpathOrResolve(entry) === realpathOrResolve(fileURLToPath(import.meta.url))
+}
+
+const realpathOrResolve = (path: string) => {
+  try {
+    return realpathSync(path)
+  } catch {
+    return resolve(path)
+  }
 }
 
 if (isEntrypoint()) {
