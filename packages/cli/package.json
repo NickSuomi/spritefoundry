@@ -13,12 +13,15 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc -b tsconfig.json"
   },
   "dependencies": {
     "@nicksuomi/spritefoundry": "workspace:*",
-    "effect": "https://pkg.pr.new/Effect-TS/effect-smol/effect@4c9e6978"
+    "effect": "3.21.4"
   }
 }

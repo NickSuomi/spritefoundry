@@ -43,7 +43,7 @@ export class SpritefoundryConfig extends Schema.Class<SpritefoundryConfig>("Spri
 }) {}
 
 export class IconSourceMetadata extends Schema.Class<IconSourceMetadata>("IconSourceMetadata")({
-  kind: Schema.Union([Schema.Literal("custom"), Schema.Literal("iconify")]),
+  kind: Schema.Union(Schema.Literal("custom"), Schema.Literal("iconify")),
   packageName: Schema.optional(Schema.String),
   name: Schema.String,
   icon: Schema.String,
@@ -70,7 +70,7 @@ export class TypesAsset extends Schema.Class<TypesAsset>("TypesAsset")({
 }) {}
 
 export class BuildManifest extends Schema.Class<BuildManifest>("BuildManifest")({
-  icons: Schema.Record(Schema.String, ManifestIcon),
+  icons: Schema.Record({ key: Schema.String, value: ManifestIcon }),
   sprite: SpriteAsset
 }) {}
 

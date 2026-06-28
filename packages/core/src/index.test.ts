@@ -20,6 +20,14 @@ import {
   UnsafeSvgContentError
 } from "./index.js"
 
+const assertEffectFailure = async <E>(
+  effect: Effect.Effect<unknown, E, never>,
+  predicate: (error: E) => boolean
+) => {
+  const error = await Effect.runPromise(Effect.flip(effect))
+  assert.equal(predicate(error), true)
+}
+
 describe("getSpritefoundryInfo", () => {
   void it("returns public package metadata", async () => {
     await Effect.runPromise(
@@ -27,7 +35,7 @@ describe("getSpritefoundryInfo", () => {
         const info = yield* getSpritefoundryInfo()
 
         assert.equal(info.name, "spritefoundry")
-        assert.equal(info.effectLine, "effect-v4-beta")
+        assert.equal(info.effectLine, "effect-v3-stable")
       })
     )
   })
@@ -80,14 +88,12 @@ describe("getSpritefoundryInfo", () => {
     await mkdir(iconsDir)
     await writeFile(join(iconsDir, "logo.svg"), '<svg><path d="M4 4h16v16H4z"/></svg>')
 
-    await assert.rejects(
-      Effect.runPromise(
-        buildSpritefoundry({
-          customSources: [{ name: "custom", directory: iconsDir }],
-          icons: [{ name: "logo", ref: "custom:logo" }],
-          output: { directory: join(root, "dist") }
-        }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer))
-      ),
+    await assertEffectFailure(
+      buildSpritefoundry({
+        customSources: [{ name: "custom", directory: iconsDir }],
+        icons: [{ name: "logo", ref: "custom:logo" }],
+        output: { directory: join(root, "dist") }
+      }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer)),
       (error) => error instanceof MissingViewBoxError && error.iconName === "logo"
     )
   })
@@ -101,14 +107,12 @@ describe("getSpritefoundryInfo", () => {
       '<svg viewBox="0 0 24 24"><script>alert("x")</script><path d="M4 4h16v16H4z"/></svg>'
     )
 
-    await assert.rejects(
-      Effect.runPromise(
-        buildSpritefoundry({
-          customSources: [{ name: "custom", directory: iconsDir }],
-          icons: [{ name: "logo", ref: "custom:logo" }],
-          output: { directory: join(root, "dist") }
-        }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer))
-      ),
+    await assertEffectFailure(
+      buildSpritefoundry({
+        customSources: [{ name: "custom", directory: iconsDir }],
+        icons: [{ name: "logo", ref: "custom:logo" }],
+        output: { directory: join(root, "dist") }
+      }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer)),
       (error) => error instanceof UnsafeSvgContentError && error.reason.includes("script")
     )
   })
@@ -122,14 +126,12 @@ describe("getSpritefoundryInfo", () => {
       '<svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/></svg><script>alert("x")</script>'
     )
 
-    await assert.rejects(
-      Effect.runPromise(
-        buildSpritefoundry({
-          customSources: [{ name: "custom", directory: iconsDir }],
-          icons: [{ name: "logo", ref: "custom:logo" }],
-          output: { directory: join(root, "dist") }
-        }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer))
-      ),
+    await assertEffectFailure(
+      buildSpritefoundry({
+        customSources: [{ name: "custom", directory: iconsDir }],
+        icons: [{ name: "logo", ref: "custom:logo" }],
+        output: { directory: join(root, "dist") }
+      }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer)),
       (error) => error instanceof UnsafeSvgContentError && error.reason.includes("script")
     )
   })
@@ -143,14 +145,12 @@ describe("getSpritefoundryInfo", () => {
       '<svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/></svg><span></span>'
     )
 
-    await assert.rejects(
-      Effect.runPromise(
-        buildSpritefoundry({
-          customSources: [{ name: "custom", directory: iconsDir }],
-          icons: [{ name: "logo", ref: "custom:logo" }],
-          output: { directory: join(root, "dist") }
-        }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer))
-      ),
+    await assertEffectFailure(
+      buildSpritefoundry({
+        customSources: [{ name: "custom", directory: iconsDir }],
+        icons: [{ name: "logo", ref: "custom:logo" }],
+        output: { directory: join(root, "dist") }
+      }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer)),
       (error) => error instanceof SvgParseError && error.message === "Expected one <svg> root element"
     )
   })
@@ -164,14 +164,12 @@ describe("getSpritefoundryInfo", () => {
       '<svg viewBox="0 0 24 24"><path fill="url(https://example.com/pattern.svg#x)" d="M4 4h16v16H4z"/></svg>'
     )
 
-    await assert.rejects(
-      Effect.runPromise(
-        buildSpritefoundry({
-          customSources: [{ name: "custom", directory: iconsDir }],
-          icons: [{ name: "logo", ref: "custom:logo" }],
-          output: { directory: join(root, "dist") }
-        }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer))
-      ),
+    await assertEffectFailure(
+      buildSpritefoundry({
+        customSources: [{ name: "custom", directory: iconsDir }],
+        icons: [{ name: "logo", ref: "custom:logo" }],
+        output: { directory: join(root, "dist") }
+      }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer)),
       (error) => error instanceof UnsafeSvgContentError && error.reason.includes("external url")
     )
   })
@@ -182,20 +180,18 @@ describe("getSpritefoundryInfo", () => {
     await mkdir(iconsDir)
     await writeFile(join(iconsDir, "logo.svg"), '<svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/></svg>')
 
-    await assert.rejects(
-      Effect.runPromise(
-        buildSpritefoundry({
-          customSources: [{ name: "custom", directory: iconsDir }],
-          icons: [{ name: "logo", ref: "custom:logo" }],
-          output: { directory: join(root, "dist") },
-          scanner: {
-            icons: [
-              { name: "logo", ref: "custom:logo" },
-              { name: "unused", ref: "custom:unused" }
-            ]
-          }
-        }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer))
-      ),
+    await assertEffectFailure(
+      buildSpritefoundry({
+        customSources: [{ name: "custom", directory: iconsDir }],
+        icons: [{ name: "logo", ref: "custom:logo" }],
+        output: { directory: join(root, "dist") },
+        scanner: {
+          icons: [
+            { name: "logo", ref: "custom:logo" },
+            { name: "unused", ref: "custom:unused" }
+          ]
+        }
+      }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer)),
       (error) =>
         error instanceof ScannerProposalMismatchError &&
         error.iconName === "unused" &&
@@ -210,21 +206,19 @@ describe("getSpritefoundryInfo", () => {
     await writeFile(join(iconsDir, "logo.svg"), '<svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/></svg>')
     await writeFile(join(iconsDir, "menu.svg"), '<svg viewBox="0 0 24 24"><path d="M2 4h20M2 12h20"/></svg>')
 
-    await assert.rejects(
-      Effect.runPromise(
-        buildSpritefoundry({
-          customSources: [{ name: "custom", directory: iconsDir }],
-          icons: [
-            { name: "logo", ref: "custom:logo" },
-            { name: "menu", ref: "custom:menu" }
-          ],
-          output: { directory: join(root, "dist") },
-          scanner: {
-            icons: [{ name: "logo", ref: "custom:logo" }],
-            strict: true
-          }
-        }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer))
-      ),
+    await assertEffectFailure(
+      buildSpritefoundry({
+        customSources: [{ name: "custom", directory: iconsDir }],
+        icons: [
+          { name: "logo", ref: "custom:logo" },
+          { name: "menu", ref: "custom:menu" }
+        ],
+        output: { directory: join(root, "dist") },
+        scanner: {
+          icons: [{ name: "logo", ref: "custom:logo" }],
+          strict: true
+        }
+      }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer)),
       (error) =>
         error instanceof ScannerProposalMismatchError &&
         error.iconName === "menu" &&
@@ -263,17 +257,15 @@ describe("getSpritefoundryInfo", () => {
     await mkdir(iconsDir)
     await writeFile(join(iconsDir, "logo.svg"), '<svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/></svg>')
 
-    await assert.rejects(
-      Effect.runPromise(
-        buildSpritefoundry({
-          customSources: [{ name: "custom", directory: iconsDir }],
-          icons: [{ name: "logo", ref: "custom:logo" }],
-          output: { directory: join(root, "dist") },
-          scanner: {
-            icons: [{ name: "logo", ref: "custom:other" }]
-          }
-        }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer))
-      ),
+    await assertEffectFailure(
+      buildSpritefoundry({
+        customSources: [{ name: "custom", directory: iconsDir }],
+        icons: [{ name: "logo", ref: "custom:logo" }],
+        output: { directory: join(root, "dist") },
+        scanner: {
+          icons: [{ name: "logo", ref: "custom:other" }]
+        }
+      }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer)),
       (error) =>
         error instanceof ScannerProposalMismatchError &&
         error.iconName === "logo" &&
@@ -288,17 +280,15 @@ describe("getSpritefoundryInfo", () => {
     await writeFile(join(iconsDir, "home.svg"), '<svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/></svg>')
     await writeFile(join(iconsDir, "house.svg"), '<svg viewBox="0 0 24 24"><path d="M2 2h20v20H2z"/></svg>')
 
-    await assert.rejects(
-      Effect.runPromise(
-        buildSpritefoundry({
-          customSources: [{ name: "custom", directory: iconsDir }],
-          icons: [
-            { name: "home", ref: "custom:home" },
-            { name: "home", ref: "custom:house" }
-          ],
-          output: { directory: join(root, "dist") }
-        }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer))
-      ),
+    await assertEffectFailure(
+      buildSpritefoundry({
+        customSources: [{ name: "custom", directory: iconsDir }],
+        icons: [
+          { name: "home", ref: "custom:home" },
+          { name: "home", ref: "custom:house" }
+        ],
+        output: { directory: join(root, "dist") }
+      }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer)),
       (error) => error instanceof IconNameCollisionError && error.iconName === "home"
     )
   })
@@ -309,17 +299,15 @@ describe("getSpritefoundryInfo", () => {
     await mkdir(iconsDir)
     await writeFile(join(iconsDir, "home.svg"), '<svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/></svg>')
 
-    await assert.rejects(
-      Effect.runPromise(
-        buildSpritefoundry({
-          customSources: [{ name: "custom", directory: iconsDir }],
-          icons: [
-            { name: "home", ref: "custom:home" },
-            { name: "homeAlias", ref: "custom:home" }
-          ],
-          output: { directory: join(root, "dist") }
-        }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer))
-      ),
+    await assertEffectFailure(
+      buildSpritefoundry({
+        customSources: [{ name: "custom", directory: iconsDir }],
+        icons: [
+          { name: "home", ref: "custom:home" },
+          { name: "homeAlias", ref: "custom:home" }
+        ],
+        output: { directory: join(root, "dist") }
+      }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer)),
       (error) => error instanceof IconSymbolCollisionError && error.symbolId === "sf-custom-home"
     )
   })
@@ -429,15 +417,13 @@ describe("getSpritefoundryInfo", () => {
   void it("fails with typed error when installed Iconify set is missing", async () => {
     const root = await mkdtemp(join(tmpdir(), "spritefoundry-"))
 
-    await assert.rejects(
-      Effect.runPromise(
-        buildSpritefoundry({
-          iconifySources: [{ name: "lucide", packageName: "@iconify-json/lucide" }],
-          customSources: [],
-          icons: [{ name: "home", ref: "lucide:home" }],
-          output: { directory: join(root, "dist"), projectDirectory: root }
-        }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer))
-      ),
+    await assertEffectFailure(
+      buildSpritefoundry({
+        iconifySources: [{ name: "lucide", packageName: "@iconify-json/lucide" }],
+        customSources: [],
+        icons: [{ name: "home", ref: "lucide:home" }],
+        output: { directory: join(root, "dist"), projectDirectory: root }
+      }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer)),
       (error) => error instanceof MissingIconifySetError && error.sourceName === "lucide"
     )
   })
@@ -448,15 +434,13 @@ describe("getSpritefoundryInfo", () => {
     await mkdir(packageDir, { recursive: true })
     await writeFile(join(packageDir, "icons.json"), JSON.stringify({ prefix: "lucide", icons: {} }))
 
-    await assert.rejects(
-      Effect.runPromise(
-        buildSpritefoundry({
-          iconifySources: [{ name: "lucide", packageName: "@iconify-json/lucide" }],
-          customSources: [],
-          icons: [{ name: "home", ref: "lucide:home" }],
-          output: { directory: join(root, "dist"), projectDirectory: root }
-        }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer))
-      ),
+    await assertEffectFailure(
+      buildSpritefoundry({
+        iconifySources: [{ name: "lucide", packageName: "@iconify-json/lucide" }],
+        customSources: [],
+        icons: [{ name: "home", ref: "lucide:home" }],
+        output: { directory: join(root, "dist"), projectDirectory: root }
+      }).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer)),
       (error) => error instanceof MissingIconifyIconError && error.icon === "home"
     )
   })

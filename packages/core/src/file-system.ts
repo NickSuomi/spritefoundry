@@ -4,14 +4,14 @@ import { Context, Effect, Layer } from "effect"
 
 import { FileSystemError } from "./errors.js"
 
-export class SpritefoundryFileSystem extends Context.Service<
+export class SpritefoundryFileSystem extends Context.Tag("@spritefoundry/core/SpritefoundryFileSystem")<
   SpritefoundryFileSystem,
   {
     readonly makeDirectory: (path: string) => Effect.Effect<void, FileSystemError>
     readonly readText: (path: string) => Effect.Effect<string, FileSystemError>
     readonly writeText: (path: string, content: string) => Effect.Effect<void, FileSystemError>
   }
->()("@spritefoundry/core/SpritefoundryFileSystem") {}
+>() {}
 
 const fileSystemError = (operation: string, path: string) => (error: unknown) =>
   new FileSystemError({

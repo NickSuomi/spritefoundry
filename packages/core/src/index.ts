@@ -7,13 +7,13 @@ export * from "./pipeline.js"
 export * from "./runtime.js"
 
 export class SpritefoundryInfo extends Schema.Class<SpritefoundryInfo>("SpritefoundryInfo")({
-  effectLine: Schema.Literal("effect-v4-beta"),
+  effectLine: Schema.Literal("effect-v3-stable"),
   name: Schema.Literal("spritefoundry")
 }) {}
 
 export const getSpritefoundryInfo = Effect.fn("getSpritefoundryInfo")(function* () {
   return new SpritefoundryInfo({
-    effectLine: "effect-v4-beta",
+    effectLine: "effect-v3-stable",
     name: "spritefoundry"
   })
 })

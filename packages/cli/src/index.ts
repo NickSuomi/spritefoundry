@@ -39,12 +39,12 @@ export interface RunSpritefoundryCliOptions {
   readonly stdout?: (message: string) => void
 }
 
-class CliConfigError extends Schema.TaggedErrorClass<CliConfigError>()("CliConfigError", {
+class CliConfigError extends Schema.TaggedError<CliConfigError>("CliConfigError")("CliConfigError", {
   message: Schema.String,
   path: Schema.String
 }) {}
 
-class CliUsageError extends Schema.TaggedErrorClass<CliUsageError>()("CliUsageError", {
+class CliUsageError extends Schema.TaggedError<CliUsageError>("CliUsageError")("CliUsageError", {
   message: Schema.String
 }) {}
 
@@ -242,7 +242,7 @@ const runProgram = (options: Required<RunSpritefoundryCliOptions>) =>
 
     return 0
   }).pipe(
-    Effect.catch((error: unknown) =>
+    Effect.catchAll((error: unknown) =>
       Effect.sync(() => {
         options.stderr(formatError(error))
         return 1

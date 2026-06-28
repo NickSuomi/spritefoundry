@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 480" role="img" aria-labelledby="title desc">
+  <title id="title">Spritefoundry icon pipeline</title>
+  <desc id="desc">Icon sources flow through Spritefoundry to generated SVG, sprite, manifest, types, and runtime integrations.</desc>
+  <defs>
+    <marker id="arrow" markerHeight="10" markerWidth="10" orient="auto" refX="9" refY="3">
+      <path d="M0,0 L0,6 L9,3 z" fill="#1f2937" />
+    </marker>
+    <style>
+      .box { fill: #fffdf7; stroke: #1f2937; stroke-width: 3; }
+      .box-blue { fill: #e8f3ff; stroke: #1f2937; stroke-width: 3; }
+      .box-green { fill: #e9f8ef; stroke: #1f2937; stroke-width: 3; }
+      .box-yellow { fill: #fff4c7; stroke: #1f2937; stroke-width: 3; }
+      .label { fill: #111827; font-family: ui-rounded, "Bradley Hand", "Segoe Print", sans-serif; font-size: 25px; font-weight: 700; }
+      .small { fill: #374151; font-family: ui-rounded, "Bradley Hand", "Segoe Print", sans-serif; font-size: 18px; }
+      .line { fill: none; stroke: #1f2937; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; marker-end: url(#arrow); }
+      .rough { fill: none; stroke: #9ca3af; stroke-width: 2; stroke-linecap: round; opacity: 0.65; }
+    </style>
+  </defs>
+
+  <path class="rough" d="M58 54 C50 111 53 368 71 424 C251 451 863 445 1053 423 C1071 332 1066 129 1046 57 C784 38 296 38 58 54" />
+
+  <g transform="translate(70 80)">
+    <rect class="box" x="0" y="0" width="210" height="120" rx="12" />
+    <path class="rough" d="M11 9 C54 -2 156 2 200 14" />
+    <text class="label" x="24" y="42">Icon sources</text>
+    <text class="small" x="24" y="76">@iconify-json/*</text>
+    <text class="small" x="24" y="102">custom SVG folders</text>
+  </g>
+
+  <g transform="translate(70 280)">
+    <rect class="box-yellow" x="0" y="0" width="210" height="110" rx="12" />
+    <path class="rough" d="M14 14 C74 2 151 4 196 16" />
+    <text class="label" x="24" y="42">Config</text>
+    <text class="small" x="24" y="76">used icon refs</text>
+    <text class="small" x="24" y="100">output directory</text>
+  </g>
+
+  <path class="line" d="M292 139 C343 139 356 140 403 140" />
+  <path class="line" d="M292 335 C338 324 365 265 405 214" />
+
+  <g transform="translate(420 128)">
+    <rect class="box-blue" x="0" y="0" width="250" height="150" rx="14" />
+    <path class="rough" d="M14 15 C83 -2 181 2 236 16" />
+    <text class="label" x="28" y="45">Spritefoundry</text>
+    <text class="small" x="28" y="80">resolve refs</text>
+    <text class="small" x="28" y="106">validate SVG safety</text>
+    <text class="small" x="28" y="132">normalize + hash</text>
+  </g>
+
+  <path class="line" d="M681 203 C719 203 745 203 786 203" />
+
+  <g transform="translate(800 80)">
+    <rect class="box-green" x="0" y="0" width="250" height="260" rx="14" />
+    <path class="rough" d="M13 18 C87 2 174 2 236 18" />
+    <text class="label" x="28" y="44">Generated</text>
+    <text class="small" x="28" y="82">svg/*.svg</text>
+    <text class="small" x="28" y="116">sprite.&lt;hash&gt;.svg</text>
+    <text class="small" x="28" y="150">manifest.json</text>
+    <text class="small" x="28" y="184">icons.d.ts</text>
+    <path class="rough" d="M31 212 C83 202 176 204 219 215" />
+    <text class="small" x="28" y="236">app-owned assets</text>
+  </g>
+
+  <path class="line" d="M925 352 C924 382 875 391 807 393" />
+
+  <g transform="translate(496 350)">
+    <rect class="box" x="0" y="0" width="290" height="90" rx="12" />
+    <path class="rough" d="M14 14 C82 1 214 3 276 16" />
+    <text class="label" x="24" y="40">Runtime + Vue</text>
+    <text class="small" x="24" y="70">preload sprite, render &lt;use&gt;</text>
+  </g>
+</svg>

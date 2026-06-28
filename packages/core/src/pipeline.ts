@@ -219,7 +219,7 @@ const resolveIconifyIcon = Effect.fn("resolveIconifyIcon")(function* (request: I
   const iconifySource = yield* findIconifySource(request.iconifySources, request.sourceName)
   const packagePath = join(request.projectDirectory, "node_modules", iconifySource.packageName, "icons.json")
   const json = yield* fs.readText(packagePath).pipe(
-    Effect.catch((error) =>
+    Effect.catchAll((error) =>
       Effect.fail(
         new MissingIconifySetError({
           sourceName: request.sourceName,
@@ -287,8 +287,8 @@ const resolveIconSource = Effect.fn("resolveIconSource")(function* (request: Ico
 })
 
 export const buildSpritefoundry = Effect.fn("buildSpritefoundry")(function* (input: unknown) {
-  const config = yield* Schema.decodeUnknownEffect(SpritefoundryConfig)(input).pipe(
-    Effect.catch((error: unknown) =>
+  const config = yield* Schema.decodeUnknown(SpritefoundryConfig)(input).pipe(
+    Effect.catchAll((error: unknown) =>
       Effect.fail(
         new ConfigDecodeError({
           message: String(error)
