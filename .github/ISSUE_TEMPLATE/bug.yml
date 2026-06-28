@@ -1,0 +1,112 @@
+name: Bug
+description: Report broken Spritefoundry behavior.
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this when Spritefoundry behaves incorrectly, generates wrong output, rejects valid input, accepts unsafe input, or fails with unclear errors.
+  - type: input
+    id: summary
+    attributes:
+      label: TL;DR
+      description: One or two lines that capture the issue.
+      placeholder: Custom SVG files with local clip paths produce broken symbol references.
+    validations:
+      required: true
+  - type: textarea
+    id: observed_behavior
+    attributes:
+      label: WHAT is happening?
+      description: Describe the observed behavior.
+      placeholder: Spritefoundry currently...
+    validations:
+      required: true
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: WHAT should happen instead?
+      description: Describe expected behavior.
+      placeholder: Spritefoundry should...
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: WHY should this be fixed?
+      description: Impact, risk, security concern, broken workflow, or reason to prioritize.
+      placeholder: This blocks...
+    validations:
+      required: true
+  - type: dropdown
+    id: package_area
+    attributes:
+      label: Package / area
+      multiple: true
+      options:
+        - Core pipeline
+        - CLI
+        - Vue package
+        - Vite package
+        - Runtime loader
+        - Documentation
+        - Repository tooling
+        - Multiple
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: HOW to replicate?
+      description: Minimal commands, config, fixtures, or code needed to reproduce.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Versions and package manager details.
+      placeholder: |
+        - Node:
+        - pnpm:
+        - Spritefoundry package/version:
+        - OS:
+  - type: textarea
+    id: config_or_input
+    attributes:
+      label: Config / input
+      description: Relevant config, SVG, manifest, package fixture, or command.
+      render: ts
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / output
+      description: Paste the relevant error, generated output, or test failure.
+      render: shell
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Concrete checks that prove the bug is fixed.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification plan
+      description: Commands or checks expected before closing.
+      placeholder: |
+        - pnpm typecheck
+        - pnpm test
+        - pnpm lint
+        - pnpm build
+    validations:
+      required: true

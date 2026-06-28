@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Usage questions
+    url: https://github.com/NickSuomi/spritefoundry/issues/new?template=feature.yml
+    about: Use the feature template for library usage gaps, docs gaps, or integration requests.

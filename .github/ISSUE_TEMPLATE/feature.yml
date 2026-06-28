@@ -1,0 +1,103 @@
+name: Feature
+description: Propose a new Spritefoundry capability or integration.
+title: "[Feature]: "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for new behavior, package capabilities, integrations, docs expansions, or public API additions.
+  - type: input
+    id: summary
+    attributes:
+      label: TL;DR
+      description: One or two lines that capture the ask.
+      placeholder: Add a Vite option that writes the generated manifest into a custom directory.
+    validations:
+      required: true
+  - type: textarea
+    id: desired_behavior
+    attributes:
+      label: WHAT should happen?
+      description: Describe the desired behavior from the caller or maintainer point of view.
+      placeholder: Spritefoundry should...
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: WHY should this be implemented?
+      description: Explain value, impact, or problem solved.
+      placeholder: This matters because...
+    validations:
+      required: true
+  - type: dropdown
+    id: package_area
+    attributes:
+      label: Package / area
+      description: Pick the closest area. Use "Multiple" for cross-package work.
+      multiple: true
+      options:
+        - Core pipeline
+        - CLI
+        - Vue package
+        - Vite package
+        - Runtime loader
+        - Documentation
+        - Repository tooling
+        - Multiple
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_usage
+    attributes:
+      label: Proposed usage
+      description: Show the config, command, code snippet, or workflow you expect.
+      render: ts
+      placeholder: |
+        spritefoundry build --config spritefoundry.config.json
+  - type: textarea
+    id: public_interface
+    attributes:
+      label: Public interface changes
+      description: List config keys, exported functions, CLI flags, generated files, or Vue props that may change.
+      placeholder: |
+        - Config:
+        - CLI:
+        - Exports:
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Concrete checks that prove the feature works.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification plan
+      description: Commands or checks expected before closing.
+      placeholder: |
+        - pnpm typecheck
+        - pnpm test
+        - pnpm lint
+        - pnpm build
+    validations:
+      required: true
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Out of scope
+      description: What this task must not include.
+      placeholder: |
+        - ...
+  - type: textarea
+    id: links
+    attributes:
+      label: Links / references
+      description: Related issues, docs, examples, or prior art.
+      placeholder: |
+        - ...

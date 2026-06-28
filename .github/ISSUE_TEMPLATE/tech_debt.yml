@@ -1,0 +1,101 @@
+name: Tech Debt
+description: Track maintainability, architecture, tooling, or cleanup work.
+title: "[Tech Debt]: "
+labels: ["needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for refactors, architecture cleanup, repo hygiene, dependency migrations, template work, or maintainability improvements.
+  - type: input
+    id: summary
+    attributes:
+      label: TL;DR
+      description: One or two lines that capture the debt.
+      placeholder: Replace local Node filesystem adapters with Effect platform services where possible.
+    validations:
+      required: true
+  - type: textarea
+    id: current_limitation
+    attributes:
+      label: WHAT is happening?
+      description: Describe the current limitation or maintenance cost.
+      placeholder: Spritefoundry currently...
+    validations:
+      required: true
+  - type: textarea
+    id: reason
+    attributes:
+      label: WHY should this be fixed?
+      description: Risk reduced, maintainability gain, correctness gain, or future work unblocked.
+      placeholder: This reduces...
+    validations:
+      required: true
+  - type: dropdown
+    id: package_area
+    attributes:
+      label: Package / area
+      multiple: true
+      options:
+        - Core pipeline
+        - CLI
+        - Vue package
+        - Vite package
+        - Runtime loader
+        - Documentation
+        - Repository tooling
+        - Multiple
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_change
+    attributes:
+      label: Proposed change
+      description: Describe the cleanup, migration, or repo change.
+      placeholder: |
+        - ...
+  - type: textarea
+    id: architecture_notes
+    attributes:
+      label: Architecture notes
+      description: Call out seams, public interfaces, ADR/docs impact, or dependency constraints.
+      placeholder: |
+        - Seam:
+        - Public API impact:
+        - ADR/docs impact:
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Concrete checks that prove the debt is resolved.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification plan
+      description: Commands or checks expected before closing.
+      placeholder: |
+        - pnpm typecheck
+        - pnpm test
+        - pnpm lint
+        - pnpm build
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks / rollout notes
+      description: What can break, what must stay unchanged, or what needs special review.
+      placeholder: |
+        - ...
+  - type: textarea
+    id: links
+    attributes:
+      label: Links / references
+      description: Related issues, docs, examples, or prior art.
+      placeholder: |
+        - ...
