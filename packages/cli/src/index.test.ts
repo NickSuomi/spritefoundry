@@ -1,7 +1,9 @@
 import assert from "node:assert/strict"
-import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises"
+import { spawnSync } from "node:child_process"
+import { mkdir, mkdtemp, readFile, symlink, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import { fileURLToPath } from "node:url"
 import { describe, it } from "node:test"
 
 import { runSpritefoundryCli } from "./index.js"
@@ -74,5 +76,17 @@ describe("runSpritefoundryCli", () => {
     assert.equal(stdout.length, 0)
     assert.match(stderr.join("\n"), /MissingViewBoxError/)
     assert.match(stderr.join("\n"), /needs a viewBox/)
+  })
+
+  void it("runs when invoked through a symlinked bin path", async () => {
+    const root = await mkdtemp(join(tmpdir(), "spritefoundry-cli-bin-"))
+    const binPath = join(root, "spritefoundry")
+    await symlink(fileURLToPath(new URL("./index.js", import.meta.url)), binPath)
+
+    const result = spawnSync(process.execPath, [binPath, "--help"], { encoding: "utf8" })
+
+    assert.equal(result.status, 0)
+    assert.match(result.stdout, /^Usage: spritefoundry/u)
+    assert.equal(result.stderr, "")
   })
 })
