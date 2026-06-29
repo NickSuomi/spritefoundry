@@ -4,6 +4,7 @@ import {
   inject,
   reactive,
   type App,
+  type DefineComponent,
   type InjectionKey,
   type Plugin,
   type PropType
@@ -16,14 +17,18 @@ import {
   type SpritefoundryRuntimeManifest
 } from "@nicksuomi/spritefoundry"
 
+/** Published package name for the Vue integration. */
 export const vuePackageName = "@nicksuomi/spritefoundry-vue"
 
+/** Icon name union derived from a Spritefoundry runtime manifest. */
 export type SpriteIconName<TManifest extends SpritefoundryRuntimeManifest> = keyof TManifest["icons"] & string
 
+/** Reactive Vue state for the sprite loader. */
 export interface SpritefoundryVueState {
   current: SpriteLoaderState
 }
 
+/** Injected Spritefoundry Vue context. */
 export interface SpritefoundryVueContext<IconName extends string = string> {
   readonly load: () => Promise<SpriteLoaderState>
   readonly manifest: SpritefoundryRuntimeManifest
@@ -34,17 +39,29 @@ export interface SpritefoundryVueContext<IconName extends string = string> {
   readonly state: SpritefoundryVueState
 }
 
+/** Options for creating the Spritefoundry Vue plugin. */
 export interface SpritefoundryVueOptions {
   readonly loader?: SpriteLoader
   readonly manifest: SpritefoundryRuntimeManifest
   readonly spriteUrl?: string
 }
 
+/** Props accepted by the SpriteIcon component. */
+export interface SpriteIconProps {
+  readonly ariaLabel?: string
+  readonly name: string
+  readonly passthrough?: boolean
+  readonly size?: number | string
+  readonly title?: string
+}
+
+/** Vue plugin with exposed context and preload hook. */
 export type SpritefoundryVuePlugin<IconName extends string = string> = Plugin & {
   readonly context: SpritefoundryVueContext<IconName>
   readonly preload: () => Promise<SpriteLoaderState>
 }
 
+/** Vue injection key for Spritefoundry context. */
 export const spritefoundryVueKey: InjectionKey<SpritefoundryVueContext<string>> = Symbol("spritefoundry-vue")
 
 const createContext = <IconName extends string>(options: SpritefoundryVueOptions): SpritefoundryVueContext<IconName> => {
@@ -80,6 +97,7 @@ const createContext = <IconName extends string>(options: SpritefoundryVueOptions
   }
 }
 
+/** Creates a Vue plugin that provides Spritefoundry icon rendering context. */
 export const createSpritefoundryVue = <IconName extends string = string>(
   options: SpritefoundryVueOptions
 ): SpritefoundryVuePlugin<IconName> => {
@@ -95,7 +113,8 @@ export const createSpritefoundryVue = <IconName extends string = string>(
   }
 }
 
-export const useSpritefoundry = <IconName extends string = string>() => {
+/** Reads the injected Spritefoundry Vue context. */
+export const useSpritefoundry = <IconName extends string = string>(): SpritefoundryVueContext<IconName> => {
   const context = inject(spritefoundryVueKey) as SpritefoundryVueContext<IconName> | undefined
   if (context === undefined) {
     throw new Error("Spritefoundry Vue plugin is not installed")
@@ -104,7 +123,8 @@ export const useSpritefoundry = <IconName extends string = string>() => {
   return context
 }
 
-export const SpriteIcon = defineComponent({
+/** Vue component that renders a `<use>` reference to a Spritefoundry symbol. */
+export const SpriteIcon: DefineComponent<SpriteIconProps> = defineComponent({
   name: "SpriteIcon",
   props: {
     ariaLabel: {
@@ -132,7 +152,7 @@ export const SpriteIcon = defineComponent({
     const spritefoundry = useSpritefoundry()
 
     return () => {
-      const icon = spritefoundry.resolveIcon(props.name, props.passthrough)
+      const icon = spritefoundry.resolveIcon(props.name, props.passthrough ?? false)
       const href = `#${icon.symbolId}`
       const labelled = props.title !== undefined || props.ariaLabel !== undefined
 
@@ -152,6 +172,7 @@ export const SpriteIcon = defineComponent({
   }
 })
 
+/** Installs Spritefoundry, preloads the sprite, and mounts a Vue app. */
 export const mountSpritefoundryApp = async (
   app: App,
   target: string,

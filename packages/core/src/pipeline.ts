@@ -1,19 +1,22 @@
 import { createHash } from "node:crypto"
 import { extname, join } from "node:path"
 
-import type { IconifyJSON } from "@iconify/types"
 import { getIconData, iconToSVG } from "@iconify/utils"
 import { Effect, Schema } from "effect"
 
 import {
   ConfigDecodeError,
+  FileSystemError,
   IconNameCollisionError,
   IconSymbolCollisionError,
   IconifyJsonError,
   InvalidIconReferenceError,
   MissingIconifyIconError,
   MissingIconifySetError,
-  ScannerProposalMismatchError
+  MissingViewBoxError,
+  ScannerProposalMismatchError,
+  SvgParseError,
+  UnsafeSvgContentError
 } from "./errors.js"
 import { SpritefoundryFileSystem } from "./file-system.js"
 import {
@@ -44,6 +47,8 @@ const defaults = {
   spriteFile: "sprite.svg",
   typesFile: "icons.d.ts"
 } as const
+
+type IconifyJson = Parameters<typeof getIconData>[0]
 
 const parseRef = (ref: string): Effect.Effect<readonly [string, string], InvalidIconReferenceError> =>
   Effect.suspend(() => {
@@ -156,9 +161,9 @@ const parseIconifyJson = (
   packageName: string,
   path: string,
   content: string
-): Effect.Effect<IconifyJSON, IconifyJsonError> =>
+): Effect.Effect<IconifyJson, IconifyJsonError> =>
   Effect.try({
-    try: () => JSON.parse(content) as IconifyJSON,
+    try: () => JSON.parse(content) as IconifyJson,
     catch: (error) =>
       new IconifyJsonError({
         sourceName,
@@ -182,6 +187,20 @@ interface ResolvedIconSource {
   readonly source: IconSourceMetadata
   readonly svg: ParsedSvg
 }
+
+type BuildSpritefoundryError =
+  | ConfigDecodeError
+  | FileSystemError
+  | IconNameCollisionError
+  | IconSymbolCollisionError
+  | IconifyJsonError
+  | InvalidIconReferenceError
+  | MissingIconifyIconError
+  | MissingIconifySetError
+  | MissingViewBoxError
+  | ScannerProposalMismatchError
+  | SvgParseError
+  | UnsafeSvgContentError
 
 const resolveCustomIcon = Effect.fn("resolveCustomIcon")(function* (request: IconResolutionRequest) {
   const fs = yield* SpritefoundryFileSystem
@@ -286,7 +305,11 @@ const resolveIconSource = Effect.fn("resolveIconSource")(function* (request: Ico
   return yield* resolver.resolve(request)
 })
 
-export const buildSpritefoundry = Effect.fn("buildSpritefoundry")(function* (input: unknown) {
+/** Builds normalized SVGs, a hashed sprite, manifest JSON, and TypeScript icon types. */
+export const buildSpritefoundry: (
+  input: unknown
+) => Effect.Effect<BuildResult, BuildSpritefoundryError, SpritefoundryFileSystem> = Effect.fn("buildSpritefoundry")(
+  function* (input: unknown) {
   const config = yield* Schema.decodeUnknown(SpritefoundryConfig)(input).pipe(
     Effect.catchAll((error: unknown) =>
       Effect.fail(
@@ -393,4 +416,5 @@ export const buildSpritefoundry = Effect.fn("buildSpritefoundry")(function* (inp
     sprite,
     types
   })
-})
+  }
+)

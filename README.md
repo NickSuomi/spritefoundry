@@ -25,14 +25,24 @@ Spritefoundry resolves explicit icon refs from installed Iconify JSON packages a
 
 ## Install
 
+JSR is the primary registry.
+
 ```sh
-pnpm add -D @nicksuomi/spritefoundry @nicksuomi/spritefoundry-cli @iconify-json/lucide
-pnpm add @nicksuomi/spritefoundry-vue
+pnpm add -D jsr:@nicksuomi/spritefoundry jsr:@nicksuomi/spritefoundry-cli @iconify-json/lucide
+pnpm add jsr:@nicksuomi/spritefoundry-vue
 ```
 
 Optional Vite integration:
 
 ```sh
+pnpm add -D jsr:@nicksuomi/spritefoundry-vite vite
+```
+
+npm registry fallback:
+
+```sh
+pnpm add -D @nicksuomi/spritefoundry @nicksuomi/spritefoundry-cli @iconify-json/lucide
+pnpm add @nicksuomi/spritefoundry-vue
 pnpm add -D @nicksuomi/spritefoundry-vite vite
 ```
 
@@ -74,9 +84,20 @@ Custom SVG files must include one `<svg>` root and a numeric `viewBox`. See [SVG
 
 ## CLI
 
-```sh
-pnpm spritefoundry build --config spritefoundry.config.json
+JSR installs expose the CLI runner as a module export. Add an app-owned script:
+
+```js
+// scripts/spritefoundry.mjs
+import { runSpritefoundryCli } from "@nicksuomi/spritefoundry-cli"
+
+process.exitCode = await runSpritefoundryCli({ args: process.argv.slice(2) })
 ```
+
+```sh
+pnpm node scripts/spritefoundry.mjs build --config spritefoundry.config.json
+```
+
+With the npm fallback package, `pnpm spritefoundry build --config spritefoundry.config.json` is also available.
 
 The CLI writes:
 

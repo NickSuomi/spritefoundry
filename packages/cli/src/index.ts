@@ -23,6 +23,7 @@ import {
 } from "@nicksuomi/spritefoundry"
 import { Effect, Schema } from "effect"
 
+/** Published package name for the Spritefoundry CLI. */
 export const cliPackageName = "@nicksuomi/spritefoundry-cli"
 
 type CliCommand = "build" | "export" | "generate"
@@ -33,6 +34,7 @@ interface ParsedArgs {
   readonly help: boolean
 }
 
+/** Inputs and optional IO hooks for running the CLI programmatically. */
 export interface RunSpritefoundryCliOptions {
   readonly args: ReadonlyArray<string>
   readonly cwd?: string
@@ -222,7 +224,7 @@ const formatError = (error: unknown) => {
   return String(error)
 }
 
-const runProgram = (options: Required<RunSpritefoundryCliOptions>) =>
+const runProgram = (options: Required<RunSpritefoundryCliOptions>): Effect.Effect<number> =>
   Effect.gen(function* () {
     const parsed = yield* parseArgs(options.args)
     if (parsed.help) {
@@ -251,7 +253,8 @@ const runProgram = (options: Required<RunSpritefoundryCliOptions>) =>
     )
   )
 
-export const runSpritefoundryCli = (options: RunSpritefoundryCliOptions) =>
+/** Runs the Spritefoundry CLI and returns its process-style exit code. */
+export const runSpritefoundryCli = (options: RunSpritefoundryCliOptions): Promise<number> =>
   Effect.runPromise(
     runProgram({
       args: options.args,

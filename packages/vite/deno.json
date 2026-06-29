@@ -1,0 +1,23 @@
+{
+  "name": "@nicksuomi/spritefoundry-vite",
+  "version": "0.0.4",
+  "license": "Apache-2.0",
+  "exports": "./src/index.ts",
+  "nodeModulesDir": "auto",
+  "imports": {
+    "@nicksuomi/spritefoundry": "jsr:@nicksuomi/spritefoundry@0.0.4",
+    "effect": "npm:effect@3.21.4",
+    "vite": "npm:vite@8.0.16"
+  },
+  "publish": {
+    "include": [
+      "LICENSE",
+      "README.md",
+      "deno.json",
+      "src/**/*.ts"
+    ],
+    "exclude": [
+      "src/**/*.test.ts"
+    ]
+  }
+}

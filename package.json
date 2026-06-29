@@ -18,6 +18,9 @@
     "build": "pnpm -r --if-present build",
     "check:private-refs": "node scripts/check-forbidden-terms.mjs",
     "lint": "pnpm check:private-refs",
+    "smoke:runtime": "pnpm smoke:runtime:node",
+    "smoke:runtime:bun": "pnpm build && bun scripts/runtime-smoke.mjs",
+    "smoke:runtime:node": "pnpm build && node scripts/runtime-smoke.mjs",
     "test": "pnpm build && node --test \"packages/*/dist/**/*.test.js\"",
     "typecheck": "tsc -b tsconfig.packages.json"
   },

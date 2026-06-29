@@ -1,22 +1,26 @@
 import { Effect } from "effect"
 
+/** Runtime manifest consumed by browser and framework loaders. */
 export interface SpritefoundryRuntimeManifest {
   readonly icons: Record<string, { readonly symbolId: string; readonly viewBox: string }>
   readonly sprite: { readonly publicPath: string }
 }
 
+/** Current state of a sprite loader. */
 export type SpriteLoaderState =
   | { readonly status: "idle" }
   | { readonly status: "loading"; readonly url: string }
   | { readonly status: "ready"; readonly injected: boolean; readonly url: string }
   | { readonly status: "error"; readonly error: unknown; readonly url: string }
 
+/** Fetch response shape needed by the sprite loader. */
 export interface SpriteFetchResponse {
   readonly ok: boolean
   readonly status: number
   readonly text: () => Promise<string>
 }
 
+/** DOM element shape used for sprite injection. */
 export interface SpriteContainerElement {
   id: string
   innerHTML: string
@@ -24,11 +28,13 @@ export interface SpriteContainerElement {
   readonly setAttribute?: (name: string, value: string) => void
 }
 
+/** DOM target shape used for sprite insertion. */
 export interface SpriteDocumentTarget {
   readonly appendChild?: (element: SpriteContainerElement) => void
   readonly prepend?: (element: SpriteContainerElement) => void
 }
 
+/** Document API subset used by the sprite loader. */
 export interface SpriteDocument {
   readonly body?: SpriteDocumentTarget
   readonly documentElement?: SpriteDocumentTarget
@@ -36,11 +42,13 @@ export interface SpriteDocument {
   readonly getElementById: (id: string) => unknown | null
 }
 
+/** Runtime environment used to fetch and inject the sprite. */
 export interface SpriteRuntimeEnvironment {
   readonly document: SpriteDocument
   readonly fetch: (url: string) => Promise<SpriteFetchResponse>
 }
 
+/** Options used to create or run a sprite loader. */
 export interface CreateSpriteLoaderOptions {
   readonly elementId?: string
   readonly environment?: SpriteRuntimeEnvironment
@@ -48,6 +56,7 @@ export interface CreateSpriteLoaderOptions {
   readonly url?: string
 }
 
+/** Stateful loader for fetching and injecting one sprite. */
 export interface SpriteLoader {
   readonly getState: () => SpriteLoaderState
   readonly load: () => Promise<SpriteLoaderState>
@@ -94,6 +103,7 @@ const injectSprite = (
     catch: (error) => (error instanceof Error ? error : new Error(String(error)))
   })
 
+/** Fetches a sprite and injects it into the configured document target. */
 export const loadSpriteEffect = (
   options: CreateSpriteLoaderOptions
 ): Effect.Effect<SpriteLoaderState, never> =>
@@ -165,6 +175,7 @@ export const loadSpriteEffect = (
     } as const
   })
 
+/** Creates a stateful sprite loader that deduplicates concurrent loads. */
 export const createSpriteLoader = (options: CreateSpriteLoaderOptions): SpriteLoader => {
   let state: SpriteLoaderState = { status: "idle" }
   let loadPromise: Promise<SpriteLoaderState> | undefined

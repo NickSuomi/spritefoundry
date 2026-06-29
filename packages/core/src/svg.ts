@@ -2,6 +2,7 @@ import { Effect } from "effect"
 
 import { MissingViewBoxError, SvgParseError, UnsafeSvgContentError } from "./errors.js"
 
+/** Parsed SVG body and normalized viewBox. */
 export interface ParsedSvg {
   readonly body: string
   readonly viewBox: string
@@ -22,6 +23,7 @@ const forbiddenDoctypePattern = /<!doctype|<!entity/i
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 
+/** Converts arbitrary source text into a stable SVG id fragment. */
 export const safeIdPart = (value: string) => {
   const normalized = value
     .trim()
@@ -47,6 +49,7 @@ const validateViewBox = (iconName: string, path: string, viewBox: string) => {
   return Effect.succeed(viewBox.trim().replace(/\s+/g, " "))
 }
 
+/** Rejects SVG content with executable or external-reference features. */
 export const validateSafeSvgContent = (
   iconName: string,
   path: string,
@@ -71,6 +74,7 @@ export const validateSafeSvgContent = (
   return Effect.succeed(undefined)
 }
 
+/** Prefixes local SVG ids and matching references with a symbol id. */
 export const namespaceSvgIds = (svg: ParsedSvg, symbolId: string): ParsedSvg => {
   const ids = new Map<string, string>()
   let match: RegExpExecArray | null
@@ -110,6 +114,7 @@ export const namespaceSvgIds = (svg: ParsedSvg, symbolId: string): ParsedSvg => 
   return { ...svg, body }
 }
 
+/** Parses one SVG document into body content and normalized viewBox metadata. */
 export const parseSvg = (
   iconName: string,
   path: string,
@@ -141,8 +146,10 @@ export const parseSvg = (
   })
 }
 
+/** Renders a parsed SVG as a normalized standalone SVG document. */
 export const normalizeSvg = (svg: ParsedSvg) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${svg.viewBox}">${svg.body}</svg>\n`
 
+/** Renders a parsed SVG as a sprite `<symbol>` element. */
 export const toSymbol = (symbolId: string, svg: ParsedSvg) =>
   `<symbol id="${symbolId}" viewBox="${svg.viewBox}">${svg.body}</symbol>`

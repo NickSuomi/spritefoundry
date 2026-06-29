@@ -1,100 +1,265 @@
 import { Schema } from "effect"
 
-export class ConfigDecodeError extends Schema.TaggedError<ConfigDecodeError>("ConfigDecodeError")("ConfigDecodeError", {
+type TaggedErrorBase<Self, Tag extends string, Fields extends Schema.Struct.Fields> = Schema.TaggedErrorClass<
+  Self,
+  Tag,
+  { readonly _tag: Schema.tag<Tag> } & Fields
+>
+
+const ConfigDecodeErrorFields: {
+  readonly message: typeof Schema.String
+} = {
   message: Schema.String
-}) {}
+} as const
 
-export class IconNameCollisionError extends Schema.TaggedError<IconNameCollisionError>("IconNameCollisionError")(
+const ConfigDecodeErrorBase: TaggedErrorBase<
+  ConfigDecodeError,
+  "ConfigDecodeError",
+  typeof ConfigDecodeErrorFields
+> = Schema.TaggedError<ConfigDecodeError>("ConfigDecodeError")("ConfigDecodeError", ConfigDecodeErrorFields)
+
+/** Error raised when unknown config input cannot decode as Spritefoundry config. */
+export class ConfigDecodeError extends ConfigDecodeErrorBase {}
+
+const IconNameCollisionErrorFields: {
+  readonly firstRef: typeof Schema.String
+  readonly iconName: typeof Schema.String
+  readonly secondRef: typeof Schema.String
+} = {
+  firstRef: Schema.String,
+  iconName: Schema.String,
+  secondRef: Schema.String
+} as const
+
+const IconNameCollisionErrorBase: TaggedErrorBase<
+  IconNameCollisionError,
   "IconNameCollisionError",
-  {
-    firstRef: Schema.String,
-    iconName: Schema.String,
-    secondRef: Schema.String
-  }
-) {}
+  typeof IconNameCollisionErrorFields
+> = Schema.TaggedError<IconNameCollisionError>("IconNameCollisionError")(
+  "IconNameCollisionError",
+  IconNameCollisionErrorFields
+)
 
-export class IconSymbolCollisionError extends Schema.TaggedError<IconSymbolCollisionError>("IconSymbolCollisionError")(
+/** Error raised when two icon refs use the same public icon name. */
+export class IconNameCollisionError extends IconNameCollisionErrorBase {}
+
+const IconSymbolCollisionErrorFields: {
+  readonly firstRef: typeof Schema.String
+  readonly secondRef: typeof Schema.String
+  readonly symbolId: typeof Schema.String
+} = {
+  firstRef: Schema.String,
+  secondRef: Schema.String,
+  symbolId: Schema.String
+} as const
+
+const IconSymbolCollisionErrorBase: TaggedErrorBase<
+  IconSymbolCollisionError,
   "IconSymbolCollisionError",
-  {
-    firstRef: Schema.String,
-    secondRef: Schema.String,
-    symbolId: Schema.String
-  }
-) {}
+  typeof IconSymbolCollisionErrorFields
+> = Schema.TaggedError<IconSymbolCollisionError>("IconSymbolCollisionError")(
+  "IconSymbolCollisionError",
+  IconSymbolCollisionErrorFields
+)
 
-export class FileSystemError extends Schema.TaggedError<FileSystemError>("FileSystemError")("FileSystemError", {
+/** Error raised when two icon refs generate the same sprite symbol id. */
+export class IconSymbolCollisionError extends IconSymbolCollisionErrorBase {}
+
+const FileSystemErrorFields: {
+  readonly operation: typeof Schema.String
+  readonly path: typeof Schema.String
+  readonly message: typeof Schema.String
+} = {
   operation: Schema.String,
   path: Schema.String,
   message: Schema.String
-}) {}
+} as const
 
-export class InvalidIconReferenceError extends Schema.TaggedError<InvalidIconReferenceError>("InvalidIconReferenceError")(
+const FileSystemErrorBase: TaggedErrorBase<FileSystemError, "FileSystemError", typeof FileSystemErrorFields> =
+  Schema.TaggedError<FileSystemError>("FileSystemError")("FileSystemError", FileSystemErrorFields)
+
+/** Error raised by filesystem operations. */
+export class FileSystemError extends FileSystemErrorBase {}
+
+const InvalidIconReferenceErrorFields: {
+  readonly ref: typeof Schema.String
+} = {
+  ref: Schema.String
+} as const
+
+const InvalidIconReferenceErrorBase: TaggedErrorBase<
+  InvalidIconReferenceError,
   "InvalidIconReferenceError",
-  {
-    ref: Schema.String
-  }
-) {}
+  typeof InvalidIconReferenceErrorFields
+> = Schema.TaggedError<InvalidIconReferenceError>("InvalidIconReferenceError")(
+  "InvalidIconReferenceError",
+  InvalidIconReferenceErrorFields
+)
 
-export class MissingCustomSourceError extends Schema.TaggedError<MissingCustomSourceError>("MissingCustomSourceError")(
+/** Error raised when an icon ref does not match `<source>:<icon>`. */
+export class InvalidIconReferenceError extends InvalidIconReferenceErrorBase {}
+
+const MissingCustomSourceErrorFields: {
+  readonly sourceName: typeof Schema.String
+} = {
+  sourceName: Schema.String
+} as const
+
+const MissingCustomSourceErrorBase: TaggedErrorBase<
+  MissingCustomSourceError,
   "MissingCustomSourceError",
-  {
-    sourceName: Schema.String
-  }
-) {}
+  typeof MissingCustomSourceErrorFields
+> = Schema.TaggedError<MissingCustomSourceError>("MissingCustomSourceError")(
+  "MissingCustomSourceError",
+  MissingCustomSourceErrorFields
+)
 
-export class IconifyJsonError extends Schema.TaggedError<IconifyJsonError>("IconifyJsonError")("IconifyJsonError", {
+/** Error raised when a custom source name is not configured. */
+export class MissingCustomSourceError extends MissingCustomSourceErrorBase {}
+
+const IconifyJsonErrorFields: {
+  readonly message: typeof Schema.String
+  readonly packageName: typeof Schema.String
+  readonly path: typeof Schema.String
+  readonly sourceName: typeof Schema.String
+} = {
   message: Schema.String,
   packageName: Schema.String,
   path: Schema.String,
   sourceName: Schema.String
-}) {}
+} as const
 
-export class MissingIconifyIconError extends Schema.TaggedError<MissingIconifyIconError>("MissingIconifyIconError")(
+const IconifyJsonErrorBase: TaggedErrorBase<IconifyJsonError, "IconifyJsonError", typeof IconifyJsonErrorFields> =
+  Schema.TaggedError<IconifyJsonError>("IconifyJsonError")("IconifyJsonError", IconifyJsonErrorFields)
+
+/** Error raised when Iconify JSON cannot be read or parsed. */
+export class IconifyJsonError extends IconifyJsonErrorBase {}
+
+const MissingIconifyIconErrorFields: {
+  readonly icon: typeof Schema.String
+  readonly packageName: typeof Schema.String
+  readonly sourceName: typeof Schema.String
+} = {
+  icon: Schema.String,
+  packageName: Schema.String,
+  sourceName: Schema.String
+} as const
+
+const MissingIconifyIconErrorBase: TaggedErrorBase<
+  MissingIconifyIconError,
   "MissingIconifyIconError",
-  {
-    icon: Schema.String,
-    packageName: Schema.String,
-    sourceName: Schema.String
-  }
-) {}
+  typeof MissingIconifyIconErrorFields
+> = Schema.TaggedError<MissingIconifyIconError>("MissingIconifyIconError")(
+  "MissingIconifyIconError",
+  MissingIconifyIconErrorFields
+)
 
-export class MissingIconifySetError extends Schema.TaggedError<MissingIconifySetError>("MissingIconifySetError")("MissingIconifySetError", {
+/** Error raised when an Iconify package lacks a requested icon. */
+export class MissingIconifyIconError extends MissingIconifyIconErrorBase {}
+
+const MissingIconifySetErrorFields: {
+  readonly message: typeof Schema.String
+  readonly packageName: typeof Schema.String
+  readonly path: typeof Schema.String
+  readonly sourceName: typeof Schema.String
+} = {
   message: Schema.String,
   packageName: Schema.String,
   path: Schema.String,
   sourceName: Schema.String
-}) {}
+} as const
 
-export class MissingViewBoxError extends Schema.TaggedError<MissingViewBoxError>("MissingViewBoxError")("MissingViewBoxError", {
+const MissingIconifySetErrorBase: TaggedErrorBase<
+  MissingIconifySetError,
+  "MissingIconifySetError",
+  typeof MissingIconifySetErrorFields
+> = Schema.TaggedError<MissingIconifySetError>("MissingIconifySetError")(
+  "MissingIconifySetError",
+  MissingIconifySetErrorFields
+)
+
+/** Error raised when an Iconify source JSON file is missing. */
+export class MissingIconifySetError extends MissingIconifySetErrorBase {}
+
+const MissingViewBoxErrorFields: {
+  readonly iconName: typeof Schema.String
+  readonly path: typeof Schema.String
+} = {
   iconName: Schema.String,
   path: Schema.String
-}) {}
+} as const
 
-export class ScannerProposalMismatchError extends Schema.TaggedError<ScannerProposalMismatchError>("ScannerProposalMismatchError")(
+const MissingViewBoxErrorBase: TaggedErrorBase<
+  MissingViewBoxError,
+  "MissingViewBoxError",
+  typeof MissingViewBoxErrorFields
+> = Schema.TaggedError<MissingViewBoxError>("MissingViewBoxError")("MissingViewBoxError", MissingViewBoxErrorFields)
+
+/** Error raised when an SVG lacks a valid viewBox. */
+export class MissingViewBoxError extends MissingViewBoxErrorBase {}
+
+const ScannerProposalMismatchErrorFields: {
+  readonly declaredRef: Schema.optional<typeof Schema.String>
+  readonly iconName: typeof Schema.String
+  readonly proposedRef: Schema.optional<typeof Schema.String>
+  readonly reason: Schema.Schema<"proposal-only" | "ref-mismatch" | "missing-from-proposal">
+} = {
+  declaredRef: Schema.optional(Schema.String),
+  iconName: Schema.String,
+  proposedRef: Schema.optional(Schema.String),
+  reason: Schema.Union(
+    Schema.Literal("proposal-only"),
+    Schema.Literal("ref-mismatch"),
+    Schema.Literal("missing-from-proposal")
+  )
+} as const
+
+const ScannerProposalMismatchErrorBase: TaggedErrorBase<
+  ScannerProposalMismatchError,
   "ScannerProposalMismatchError",
-  {
-    declaredRef: Schema.optional(Schema.String),
-    iconName: Schema.String,
-    proposedRef: Schema.optional(Schema.String),
-    reason: Schema.Union(
-      Schema.Literal("proposal-only"),
-      Schema.Literal("ref-mismatch"),
-      Schema.Literal("missing-from-proposal")
-    )
-  }
-) {}
+  typeof ScannerProposalMismatchErrorFields
+> = Schema.TaggedError<ScannerProposalMismatchError>("ScannerProposalMismatchError")(
+  "ScannerProposalMismatchError",
+  ScannerProposalMismatchErrorFields
+)
 
-export class SvgParseError extends Schema.TaggedError<SvgParseError>("SvgParseError")("SvgParseError", {
+/** Error raised when scanner proposal input disagrees with explicit icon config. */
+export class ScannerProposalMismatchError extends ScannerProposalMismatchErrorBase {}
+
+const SvgParseErrorFields: {
+  readonly iconName: typeof Schema.String
+  readonly path: typeof Schema.String
+  readonly message: typeof Schema.String
+} = {
   iconName: Schema.String,
   path: Schema.String,
   message: Schema.String
-}) {}
+} as const
 
-export class UnsafeSvgContentError extends Schema.TaggedError<UnsafeSvgContentError>("UnsafeSvgContentError")(
+const SvgParseErrorBase: TaggedErrorBase<SvgParseError, "SvgParseError", typeof SvgParseErrorFields> =
+  Schema.TaggedError<SvgParseError>("SvgParseError")("SvgParseError", SvgParseErrorFields)
+
+/** Error raised when SVG text cannot be parsed into accepted SVG shape. */
+export class SvgParseError extends SvgParseErrorBase {}
+
+const UnsafeSvgContentErrorFields: {
+  readonly iconName: typeof Schema.String
+  readonly path: typeof Schema.String
+  readonly reason: typeof Schema.String
+} = {
+  iconName: Schema.String,
+  path: Schema.String,
+  reason: Schema.String
+} as const
+
+const UnsafeSvgContentErrorBase: TaggedErrorBase<
+  UnsafeSvgContentError,
   "UnsafeSvgContentError",
-  {
-    iconName: Schema.String,
-    path: Schema.String,
-    reason: Schema.String
-  }
-) {}
+  typeof UnsafeSvgContentErrorFields
+> = Schema.TaggedError<UnsafeSvgContentError>("UnsafeSvgContentError")(
+  "UnsafeSvgContentError",
+  UnsafeSvgContentErrorFields
+)
+
+/** Error raised when SVG text contains active or external content. */
+export class UnsafeSvgContentError extends UnsafeSvgContentErrorBase {}

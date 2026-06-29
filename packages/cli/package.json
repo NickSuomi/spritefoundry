@@ -1,9 +1,14 @@
 {
   "name": "@nicksuomi/spritefoundry-cli",
-  "version": "0.0.0",
+  "version": "0.0.4",
   "description": "CLI for Spritefoundry.",
   "type": "module",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NickSuomi/spritefoundry.git",
+    "directory": "packages/cli"
+  },
   "bin": {
     "spritefoundry": "./dist/index.js"
   },

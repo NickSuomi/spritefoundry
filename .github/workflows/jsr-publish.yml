@@ -1,0 +1,108 @@
+name: Publish JSR packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Run JSR publish verification without uploading packages.
+        required: true
+        type: boolean
+        default: true
+      confirm_publish:
+        description: Type "publish with provenance" to upload packages when dry_run is false.
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: jsr-publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish JSR packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Enable pnpm 11.7.0
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.7.0 --activate
+          pnpm --version
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Guard real publish
+        if: ${{ inputs.dry_run == false }}
+        env:
+          CONFIRM_PUBLISH: ${{ inputs.confirm_publish }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ "$REF_NAME" != "main" ]; then
+            echo "Real JSR publish must be dispatched from main."
+            exit 1
+          fi
+
+          if [ "$CONFIRM_PUBLISH" != "publish with provenance" ]; then
+            echo "Real JSR publish requires confirm_publish='publish with provenance'."
+            exit 1
+          fi
+
+      - name: Publish packages to JSR
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+
+          publish_package() {
+            package_dir="$1"
+            shift
+
+            echo "Publishing $package_dir $*"
+            (
+              cd "$package_dir"
+              pnpm dlx jsr publish "$@"
+            )
+          }
+
+          if [ "$DRY_RUN" = "true" ]; then
+            publish_package packages/core --dry-run
+
+            core_version="$(node -e 'const fs = require("node:fs"); console.log(JSON.parse(fs.readFileSync("packages/core/deno.json", "utf8")).version)')"
+            if node --input-type=module - "$core_version" <<'NODE'
+          const version = process.argv[2]
+          const response = await fetch("https://jsr.io/@nicksuomi/spritefoundry/meta.json")
+          if (!response.ok) {
+            process.exit(1)
+          }
+          const metadata = await response.json()
+          process.exit(Object.hasOwn(metadata.versions ?? {}, version) ? 0 : 1)
+          NODE
+            then
+              for package_dir in packages/cli packages/vite packages/vue; do
+                publish_package "$package_dir" --dry-run
+              done
+            else
+              echo "Skipping dependent dry-runs because @nicksuomi/spritefoundry@$core_version is not published yet."
+            fi
+
+            exit 0
+          fi
+
+          # JSR skips versions already published; bump deno.json versions for new uploads.
+          for package_dir in packages/core packages/cli packages/vite packages/vue; do
+            publish_package "$package_dir"
+          done

@@ -1,0 +1,22 @@
+{
+  "name": "@nicksuomi/spritefoundry-vue",
+  "version": "0.0.4",
+  "license": "Apache-2.0",
+  "exports": "./src/index.ts",
+  "nodeModulesDir": "auto",
+  "imports": {
+    "@nicksuomi/spritefoundry": "jsr:@nicksuomi/spritefoundry@0.0.4",
+    "vue": "npm:vue@3.5.38"
+  },
+  "publish": {
+    "include": [
+      "LICENSE",
+      "README.md",
+      "deno.json",
+      "src/**/*.ts"
+    ],
+    "exclude": [
+      "src/**/*.test.ts"
+    ]
+  }
+}

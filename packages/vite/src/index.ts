@@ -8,8 +8,10 @@ import {
 import { Effect } from "effect"
 import type { Plugin, ResolvedConfig } from "vite"
 
+/** Published package name for the Vite integration. */
 export const vitePackageName = "@nicksuomi/spritefoundry-vite"
 
+/** Options for the Spritefoundry Vite build plugin. */
 export interface SpritefoundryViteOptions {
   readonly config: unknown | (() => unknown | Promise<unknown>)
   readonly outputDirectory?: string
@@ -48,6 +50,7 @@ const withVitePaths = (input: unknown, root: string, outputDirectory: string): u
 const resolveUserConfig = async (config: SpritefoundryViteOptions["config"]) =>
   typeof config === "function" ? config() : config
 
+/** Creates a Vite plugin that emits Spritefoundry assets during build output. */
 export const spritefoundryVite = (options: SpritefoundryViteOptions): Plugin => {
   let viteConfig: ResolvedConfig | undefined
 
