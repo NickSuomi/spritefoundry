@@ -1,205 +1,120 @@
 # Spritefoundry
 
-Effect-first TypeScript tooling for turning selected Iconify and custom SVG icons into an app-owned SVG sprite, manifest, and typed icon names.
+Spritefoundry is Effect-first TypeScript tooling that turns selected Iconify and custom SVG icons into an app-owned SVG sprite, manifest, and typed icon names.
 
 Status: alpha.
 
-## Problem
+## What is Spritefoundry?
 
-Icon libraries are useful, but app builds often need stricter control: only used icons, local source resolution, deterministic generated files, typed icon names, and runtime loading that does not fetch third-party icon services.
+Spritefoundry builds a small, deterministic icon artifact for an application that wants to control exactly which icons it ships. It resolves only configured local sources, validates SVG input, and produces generated files that an application can serve itself.
 
-## Solution
+## Why Spritefoundry?
 
-Spritefoundry resolves explicit icon refs from installed Iconify JSON packages and local SVG folders, validates SVG safety, writes normalized SVGs, emits a hashed sprite, generates a manifest and TypeScript icon-name types, and provides CLI, Vite, runtime, and Vue integration.
+- App builds often need selected icons rather than a full icon library.
+- Runtime icon loading should not require fetching from third-party icon services.
+- Icon names and generated artifacts should be deterministic and type-safe across build and runtime integrations.
 
-![Spritefoundry icon pipeline](docs/assets/spritefoundry-pipeline.excalidraw.svg)
+Spritefoundry is not a general SVG optimizer replacement.
 
-## How It Works
+## How it works
 
-1. Configure local icon sources and explicit used icons.
-2. Build through the CLI or Vite plugin.
-3. Resolve icons from installed packages and custom SVG folders.
-4. Validate and normalize SVG content.
-5. Emit `svg/`, `sprite.<hash>.svg`, `manifest.json`, and `icons.d.ts`.
-6. Load the generated sprite from app-owned assets at runtime.
+1. Configure explicit Iconify and custom SVG sources plus the icons to expose.
+2. Run the core pipeline through the CLI or Vite plugin.
+3. Resolve, validate, and normalize each configured icon.
+4. Emit standalone SVGs, a hashed sprite, `manifest.json`, and `icons.d.ts`.
+5. Load the generated, app-owned sprite at runtime.
 
-## Install
+## Quick start
 
-JSR is the primary registry.
+### Install
+
+JSR is the primary registry:
 
 ```sh
 pnpm add -D jsr:@nicksuomi/spritefoundry jsr:@nicksuomi/spritefoundry-cli @iconify-json/lucide
 pnpm add jsr:@nicksuomi/spritefoundry-vue
 ```
 
-Optional Vite integration:
+For Vite:
 
 ```sh
 pnpm add -D jsr:@nicksuomi/spritefoundry-vite vite
 ```
 
-npm registry fallback:
+The npm packages remain a supported fallback; see [usage notes](docs/usage.md).
 
-```sh
-pnpm add -D @nicksuomi/spritefoundry @nicksuomi/spritefoundry-cli @iconify-json/lucide
-pnpm add @nicksuomi/spritefoundry-vue
-pnpm add -D @nicksuomi/spritefoundry-vite vite
-```
-
-## Minimal Config
+### Configure and build
 
 Create `spritefoundry.config.json`:
 
 ```json
 {
-  "iconifySources": [
-    {
-      "name": "lucide",
-      "packageName": "@iconify-json/lucide"
-    }
-  ],
-  "customSources": [
-    {
-      "name": "brand",
-      "directory": "icons/brand"
-    }
-  ],
+  "iconifySources": [{ "name": "lucide", "packageName": "@iconify-json/lucide" }],
+  "customSources": [{ "name": "brand", "directory": "icons/brand" }],
   "icons": [
-    {
-      "name": "home",
-      "ref": "lucide:home"
-    },
-    {
-      "name": "logo",
-      "ref": "brand:logo"
-    }
+    { "name": "home", "ref": "lucide:home" },
+    { "name": "logo", "ref": "brand:logo" }
   ],
-  "output": {
-    "directory": "dist/icons"
-  }
+  "output": { "directory": "dist/icons" }
 }
-```
-
-Custom SVG files must include one `<svg>` root and a numeric `viewBox`. See [SVG policy](docs/svg-policy.md).
-
-## CLI
-
-JSR installs expose the CLI runner as a module export. Add an app-owned script:
-
-```js
-// scripts/spritefoundry.mjs
-import { runSpritefoundryCli } from "@nicksuomi/spritefoundry-cli"
-
-process.exitCode = await runSpritefoundryCli({ args: process.argv.slice(2) })
 ```
 
 ```sh
 pnpm node scripts/spritefoundry.mjs build --config spritefoundry.config.json
 ```
 
-With the npm fallback package, `pnpm spritefoundry build --config spritefoundry.config.json` is also available.
+The build writes `svg/<icon>.svg`, `sprite.<hash>.svg`, `manifest.json`, and `icons.d.ts`.
 
-The CLI writes:
+## Integrations
 
-- `svg/<icon>.svg`
-- `sprite.<hash>.svg`
-- `manifest.json`
-- `icons.d.ts`
+- **CLI** — builds an app-owned icon artifact from explicit configuration.
+- **Vite** — runs the same pipeline during `writeBundle`.
+- **Runtime** — loads the generated sprite once from `manifest.sprite.publicPath`.
+- **Vue** — provides `SpriteIcon`, a preload helper, and manifest-backed name resolution.
 
-## Vite
+See [usage notes](docs/usage.md) for integration examples.
 
-```ts
-import { defineConfig } from "vite"
-import { spritefoundryVite } from "@nicksuomi/spritefoundry-vite"
+## Architecture
 
-export default defineConfig({
-  plugins: [
-    spritefoundryVite({
-      config: {
-        iconifySources: [{ name: "lucide", packageName: "@iconify-json/lucide" }],
-        customSources: [{ name: "brand", directory: "icons/brand" }],
-        icons: [
-          { name: "home", ref: "lucide:home" },
-          { name: "logo", ref: "brand:logo" }
-        ],
-        output: {}
-      }
-    })
-  ]
-})
+One core pipeline owns the artifact contract: source resolution, SVG safety validation, normalization, sprite generation, manifest generation, and types. CLI, Vite, runtime, and Vue packages adapt that contract rather than reimplementing it.
+
+Read [ARCHITECTURE.md](ARCHITECTURE.md) for package boundaries and extension points.
+
+## Security and offline guarantees
+
+- Builds read installed Iconify JSON packages and local custom SVG files.
+- Runtime helpers fetch only the generated sprite asset owned by the application.
+- SVG input with active or external content is rejected rather than repaired.
+- Generated sprite filenames are content-hashed.
+
+Read the exact [SVG policy](docs/svg-policy.md) before adding custom icons.
+
+## Known limitations
+
+- Spritefoundry is alpha; package and integration interfaces may change.
+- Custom SVG input must have one `<svg>` root and a numeric `viewBox`.
+- The accepted SVG policy is intentionally narrower than general SVG.
+
+## Verify
+
+```sh
+pnpm typecheck
+pnpm test
+pnpm lint
 ```
 
-The plugin runs during Vite build and writes Spritefoundry outputs into Vite `outDir`.
+For dependency-policy changes, also run:
 
-## Runtime
-
-```ts
-import manifest from "./icons/manifest.json"
-import { createSpriteLoader } from "@nicksuomi/spritefoundry"
-
-const loader = createSpriteLoader({ manifest })
-const state = await loader.load()
-
-if (state.status !== "ready") {
-  console.error(state.error)
-}
+```sh
+pnpm install --frozen-lockfile
+pnpm list --depth 0 -r
 ```
 
-The loader fetches only `manifest.sprite.publicPath`, unless the app passes an explicit sprite URL.
+## Related projects
 
-## Vue
+- [Iconify Tools](https://iconify.design/docs/libraries/tools/) — icon-set tooling; Spritefoundry builds selected, app-owned artifacts.
+- [vite-plugin-svg-icons](https://github.com/vbenjs/vite-plugin-svg-icons) — Vite sprite generation; Spritefoundry shares one core contract across CLI, Vite, runtime, and Vue.
 
-```ts
-import { createApp } from "vue"
-import manifest from "./icons/manifest.json"
-import { createSpritefoundryVue } from "@nicksuomi/spritefoundry-vue"
-import App from "./App.vue"
+## License
 
-const app = createApp(App)
-const spritefoundry = createSpritefoundryVue({ manifest })
-
-app.use(spritefoundry)
-await spritefoundry.preload()
-app.mount("#app")
-```
-
-```vue
-<template>
-  <SpriteIcon name="home" title="Home" />
-</template>
-```
-
-For non-manifest symbol IDs, opt in explicitly:
-
-```vue
-<template>
-  <SpriteIcon name="external-symbol-id" passthrough />
-</template>
-```
-
-## Security And Offline Guarantees
-
-- Normal builds read installed Iconify JSON data and local custom SVG files.
-- Runtime helpers fetch only the generated sprite asset owned by the app.
-- SVG input is rejected when it contains active or external content.
-- Generated sprite filenames include a content hash.
-- pnpm hardening is part of the repo contract and must not be weakened.
-
-## Comparison
-
-Spritefoundry sits between Iconify data tooling, SVG sprite generators, Vite plugins, and runtime icon components. It is for apps that want explicit used-icon config, local Iconify/custom SVG resolution, generated sprite artifacts, typed icon names, and a small runtime loader.
-
-| Tool | Good at | Spritefoundry differs by |
-| --- | --- | --- |
-| [Iconify Tools](https://iconify.design/docs/libraries/tools/) | Importing, exporting, parsing, cleaning, and validating icon sets. | Turning selected installed Iconify/custom refs into app-owned sprite, manifest, and TypeScript outputs. |
-| [Iconify Vue](https://iconify.design/docs/icon-components/vue/) and [unplugin-icons](https://github.com/unplugin/unplugin-icons) | Rendering Iconify icons as framework components, including on-demand component workflows. | Prebuilding a hashed sprite and manifest so runtime fetches stay limited to app-owned assets. |
-| [svg-sprite](https://github.com/svg-sprite/svg-sprite) | Low-level SVG file to sprite generation with stylesheet outputs. | Adding Iconify JSON source resolution, explicit used-icon config, typed manifest output, and runtime loading helpers. |
-| [vite-plugin-svg-icons](https://github.com/vbenjs/vite-plugin-svg-icons) | Fast SVG sprite generation inside Vite builds. | Keeping the core pipeline usable through CLI, Vite, and Vue packages with the same manifest contract. |
-| [SVGO](https://svgo.dev/docs/introduction/) | Optimizing SVG files. | Enforcing conservative SVG safety policy and packaging selected icons; it is not a general SVG optimizer replacement. |
-
-## Architecture And Policy
-
-- Architecture: [ARCHITECTURE.md](ARCHITECTURE.md)
-- SVG safety: [docs/svg-policy.md](docs/svg-policy.md)
-- Extended usage notes: [docs/usage.md](docs/usage.md)
-- Effect package decision: [docs/adr/0001-effect-v4-beta-and-pnpm-hardening.md](docs/adr/0001-effect-v4-beta-and-pnpm-hardening.md)
+Spritefoundry is licensed under [Apache-2.0](LICENSE). See [NOTICE](NOTICE) for attribution.
