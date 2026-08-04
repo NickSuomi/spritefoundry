@@ -1,4 +1,5 @@
 # Spritefoundry
+<!-- github-readme-standard: full -->
 
 Spritefoundry is Effect-first TypeScript tooling that turns selected Iconify and custom SVG icons into an app-owned SVG sprite, manifest, and typed icon names.
 
