@@ -116,7 +116,7 @@ export const loadSpriteEffect = (
       try: () => environment.fetch(url),
       catch: (error) => error
     }).pipe(
-      Effect.catchAll((error) =>
+      Effect.catch((error) =>
         Effect.succeed({
           status: "error",
           error,
@@ -141,7 +141,7 @@ export const loadSpriteEffect = (
       try: () => response.text(),
       catch: (error) => error
     }).pipe(
-      Effect.catchAll((error) =>
+      Effect.catch((error) =>
         Effect.succeed({
           status: "error",
           error,
@@ -155,7 +155,7 @@ export const loadSpriteEffect = (
     }
 
     const injected = yield* injectSprite(environment.document, elementId, svg).pipe(
-      Effect.catchAll((error) =>
+      Effect.catch((error) =>
         Effect.succeed({
           status: "error",
           error,

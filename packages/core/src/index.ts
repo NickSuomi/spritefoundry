@@ -6,26 +6,19 @@ export * from "./model.js"
 export * from "./pipeline.js"
 export * from "./runtime.js"
 
-type SchemaClassBase<Self, Fields extends Schema.Struct.Fields> = Schema.Class<
-  Self,
-  Fields,
-  Schema.Struct.Encoded<Fields>,
-  Schema.Struct.Context<Fields>,
-  Schema.Struct.Constructor<Fields>,
-  {},
-  {}
->
-
 const SpritefoundryInfoFields: {
-  readonly effectLine: Schema.Schema<"effect-v3-stable">
-  readonly name: Schema.Schema<"spritefoundry">
+  readonly effectLine: Schema.Literal<"effect-v4-rc">
+  readonly name: Schema.Literal<"spritefoundry">
 } = {
-  effectLine: Schema.Literal("effect-v3-stable"),
+  effectLine: Schema.Literal("effect-v4-rc"),
   name: Schema.Literal("spritefoundry")
 } as const
 
-const SpritefoundryInfoBase: SchemaClassBase<SpritefoundryInfo, typeof SpritefoundryInfoFields> =
-  Schema.Class<SpritefoundryInfo>("SpritefoundryInfo")(SpritefoundryInfoFields)
+const SpritefoundryInfoBase: Schema.Class<
+  SpritefoundryInfo,
+  Schema.Struct<typeof SpritefoundryInfoFields>,
+  {}
+> = Schema.Class<SpritefoundryInfo>("SpritefoundryInfo")(SpritefoundryInfoFields)
 
 /** Package identity and Effect runtime line used by Spritefoundry. */
 export class SpritefoundryInfo extends SpritefoundryInfoBase {}
@@ -34,7 +27,7 @@ export class SpritefoundryInfo extends SpritefoundryInfoBase {}
 export const getSpritefoundryInfo: () => Effect.Effect<SpritefoundryInfo, never, never> = Effect.fn("getSpritefoundryInfo")(
   function* () {
     return new SpritefoundryInfo({
-      effectLine: "effect-v3-stable",
+      effectLine: "effect-v4-rc",
       name: "spritefoundry"
     })
   }

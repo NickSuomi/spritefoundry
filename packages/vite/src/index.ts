@@ -1,10 +1,6 @@
 import { resolve } from "node:path"
 
-import {
-  buildSpritefoundry,
-  NodeSpritefoundryFileSystem,
-  type SpritefoundryConfig
-} from "@nicksuomi/spritefoundry"
+import { buildSpritefoundry, NodeSpritefoundryFileSystem } from "@nicksuomi/spritefoundry"
 import { Effect } from "effect"
 import type { Plugin, ResolvedConfig } from "vite"
 
@@ -68,7 +64,7 @@ export const spritefoundryVite = (options: SpritefoundryViteOptions): Plugin => 
 
       const outputDirectory = options.outputDirectory ?? resolve(config.root, config.build.outDir)
       const rawConfig = await resolveUserConfig(options.config)
-      const spritefoundryConfig = withVitePaths(rawConfig, config.root, outputDirectory) as SpritefoundryConfig
+      const spritefoundryConfig = withVitePaths(rawConfig, config.root, outputDirectory)
       const result = await Effect.runPromise(
         buildSpritefoundry(spritefoundryConfig).pipe(Effect.provide(NodeSpritefoundryFileSystem.layer))
       )

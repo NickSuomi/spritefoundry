@@ -27,7 +27,7 @@
   "devDependencies": {
     "@effect/language-service": "0.86.2",
     "@types/node": "25.9.4",
-    "effect": "3.21.4",
+    "effect": "4.0.0-rc.117",
     "typescript": "6.0.3"
   }
 }
