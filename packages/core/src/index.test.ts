@@ -35,7 +35,7 @@ describe("getSpritefoundryInfo", () => {
         const info = yield* getSpritefoundryInfo()
 
         assert.equal(info.name, "spritefoundry")
-        assert.equal(info.effectLine, "effect-v4-rc")
+        assert.equal(info.effectLine, "effect-v4-stable")
       })
     )
   })
