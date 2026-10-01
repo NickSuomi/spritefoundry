@@ -245,7 +245,7 @@ const runProgram = (options: Required<RunSpritefoundryCliOptions>): Effect.Effec
 
     return 0
   }).pipe(
-    Effect.catchAll((error: unknown) =>
+    Effect.catch((error: unknown) =>
       Effect.sync(() => {
         options.stderr(formatError(error))
         return 1

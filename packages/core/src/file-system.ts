@@ -10,14 +10,13 @@ interface SpritefoundryFileSystemService {
   readonly writeText: (path: string, content: string) => Effect.Effect<void, FileSystemError>
 }
 
-const SpritefoundryFileSystemBase: Context.TagClass<
+const SpritefoundryFileSystemBase: Context.ServiceClass<
   SpritefoundryFileSystem,
   "@spritefoundry/core/SpritefoundryFileSystem",
   SpritefoundryFileSystemService
-> = Context.Tag("@spritefoundry/core/SpritefoundryFileSystem")<
-  SpritefoundryFileSystem,
-  SpritefoundryFileSystemService
->()
+> = Context.Service<SpritefoundryFileSystem, SpritefoundryFileSystemService>()(
+  "@spritefoundry/core/SpritefoundryFileSystem"
+)
 
 /** Effect service for Spritefoundry file-system reads, writes, and directory creation. */
 export class SpritefoundryFileSystem extends SpritefoundryFileSystemBase {}

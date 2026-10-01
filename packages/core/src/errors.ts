@@ -1,10 +1,4 @@
-import { Schema } from "effect"
-
-type TaggedErrorBase<Self, Tag extends string, Fields extends Schema.Struct.Fields> = Schema.TaggedErrorClass<
-  Self,
-  Tag,
-  { readonly _tag: Schema.tag<Tag> } & Fields
->
+import { Schema, type Cause } from "effect"
 
 const ConfigDecodeErrorFields: {
   readonly message: typeof Schema.String
@@ -12,10 +6,10 @@ const ConfigDecodeErrorFields: {
   message: Schema.String
 } as const
 
-const ConfigDecodeErrorBase: TaggedErrorBase<
+const ConfigDecodeErrorBase: Schema.Class<
   ConfigDecodeError,
-  "ConfigDecodeError",
-  typeof ConfigDecodeErrorFields
+  Schema.TaggedStruct<"ConfigDecodeError", typeof ConfigDecodeErrorFields>,
+  Cause.YieldableError
 > = Schema.TaggedError<ConfigDecodeError>("ConfigDecodeError")("ConfigDecodeError", ConfigDecodeErrorFields)
 
 /** Error raised when unknown config input cannot decode as Spritefoundry config. */
@@ -31,10 +25,10 @@ const IconNameCollisionErrorFields: {
   secondRef: Schema.String
 } as const
 
-const IconNameCollisionErrorBase: TaggedErrorBase<
+const IconNameCollisionErrorBase: Schema.Class<
   IconNameCollisionError,
-  "IconNameCollisionError",
-  typeof IconNameCollisionErrorFields
+  Schema.TaggedStruct<"IconNameCollisionError", typeof IconNameCollisionErrorFields>,
+  Cause.YieldableError
 > = Schema.TaggedError<IconNameCollisionError>("IconNameCollisionError")(
   "IconNameCollisionError",
   IconNameCollisionErrorFields
@@ -53,10 +47,10 @@ const IconSymbolCollisionErrorFields: {
   symbolId: Schema.String
 } as const
 
-const IconSymbolCollisionErrorBase: TaggedErrorBase<
+const IconSymbolCollisionErrorBase: Schema.Class<
   IconSymbolCollisionError,
-  "IconSymbolCollisionError",
-  typeof IconSymbolCollisionErrorFields
+  Schema.TaggedStruct<"IconSymbolCollisionError", typeof IconSymbolCollisionErrorFields>,
+  Cause.YieldableError
 > = Schema.TaggedError<IconSymbolCollisionError>("IconSymbolCollisionError")(
   "IconSymbolCollisionError",
   IconSymbolCollisionErrorFields
@@ -75,8 +69,11 @@ const FileSystemErrorFields: {
   message: Schema.String
 } as const
 
-const FileSystemErrorBase: TaggedErrorBase<FileSystemError, "FileSystemError", typeof FileSystemErrorFields> =
-  Schema.TaggedError<FileSystemError>("FileSystemError")("FileSystemError", FileSystemErrorFields)
+const FileSystemErrorBase: Schema.Class<
+  FileSystemError,
+  Schema.TaggedStruct<"FileSystemError", typeof FileSystemErrorFields>,
+  Cause.YieldableError
+> = Schema.TaggedError<FileSystemError>("FileSystemError")("FileSystemError", FileSystemErrorFields)
 
 /** Error raised by filesystem operations. */
 export class FileSystemError extends FileSystemErrorBase {}
@@ -87,10 +84,10 @@ const InvalidIconReferenceErrorFields: {
   ref: Schema.String
 } as const
 
-const InvalidIconReferenceErrorBase: TaggedErrorBase<
+const InvalidIconReferenceErrorBase: Schema.Class<
   InvalidIconReferenceError,
-  "InvalidIconReferenceError",
-  typeof InvalidIconReferenceErrorFields
+  Schema.TaggedStruct<"InvalidIconReferenceError", typeof InvalidIconReferenceErrorFields>,
+  Cause.YieldableError
 > = Schema.TaggedError<InvalidIconReferenceError>("InvalidIconReferenceError")(
   "InvalidIconReferenceError",
   InvalidIconReferenceErrorFields
@@ -105,10 +102,10 @@ const MissingCustomSourceErrorFields: {
   sourceName: Schema.String
 } as const
 
-const MissingCustomSourceErrorBase: TaggedErrorBase<
+const MissingCustomSourceErrorBase: Schema.Class<
   MissingCustomSourceError,
-  "MissingCustomSourceError",
-  typeof MissingCustomSourceErrorFields
+  Schema.TaggedStruct<"MissingCustomSourceError", typeof MissingCustomSourceErrorFields>,
+  Cause.YieldableError
 > = Schema.TaggedError<MissingCustomSourceError>("MissingCustomSourceError")(
   "MissingCustomSourceError",
   MissingCustomSourceErrorFields
@@ -129,8 +126,11 @@ const IconifyJsonErrorFields: {
   sourceName: Schema.String
 } as const
 
-const IconifyJsonErrorBase: TaggedErrorBase<IconifyJsonError, "IconifyJsonError", typeof IconifyJsonErrorFields> =
-  Schema.TaggedError<IconifyJsonError>("IconifyJsonError")("IconifyJsonError", IconifyJsonErrorFields)
+const IconifyJsonErrorBase: Schema.Class<
+  IconifyJsonError,
+  Schema.TaggedStruct<"IconifyJsonError", typeof IconifyJsonErrorFields>,
+  Cause.YieldableError
+> = Schema.TaggedError<IconifyJsonError>("IconifyJsonError")("IconifyJsonError", IconifyJsonErrorFields)
 
 /** Error raised when Iconify JSON cannot be read or parsed. */
 export class IconifyJsonError extends IconifyJsonErrorBase {}
@@ -145,10 +145,10 @@ const MissingIconifyIconErrorFields: {
   sourceName: Schema.String
 } as const
 
-const MissingIconifyIconErrorBase: TaggedErrorBase<
+const MissingIconifyIconErrorBase: Schema.Class<
   MissingIconifyIconError,
-  "MissingIconifyIconError",
-  typeof MissingIconifyIconErrorFields
+  Schema.TaggedStruct<"MissingIconifyIconError", typeof MissingIconifyIconErrorFields>,
+  Cause.YieldableError
 > = Schema.TaggedError<MissingIconifyIconError>("MissingIconifyIconError")(
   "MissingIconifyIconError",
   MissingIconifyIconErrorFields
@@ -169,10 +169,10 @@ const MissingIconifySetErrorFields: {
   sourceName: Schema.String
 } as const
 
-const MissingIconifySetErrorBase: TaggedErrorBase<
+const MissingIconifySetErrorBase: Schema.Class<
   MissingIconifySetError,
-  "MissingIconifySetError",
-  typeof MissingIconifySetErrorFields
+  Schema.TaggedStruct<"MissingIconifySetError", typeof MissingIconifySetErrorFields>,
+  Cause.YieldableError
 > = Schema.TaggedError<MissingIconifySetError>("MissingIconifySetError")(
   "MissingIconifySetError",
   MissingIconifySetErrorFields
@@ -189,10 +189,10 @@ const MissingViewBoxErrorFields: {
   path: Schema.String
 } as const
 
-const MissingViewBoxErrorBase: TaggedErrorBase<
+const MissingViewBoxErrorBase: Schema.Class<
   MissingViewBoxError,
-  "MissingViewBoxError",
-  typeof MissingViewBoxErrorFields
+  Schema.TaggedStruct<"MissingViewBoxError", typeof MissingViewBoxErrorFields>,
+  Cause.YieldableError
 > = Schema.TaggedError<MissingViewBoxError>("MissingViewBoxError")("MissingViewBoxError", MissingViewBoxErrorFields)
 
 /** Error raised when an SVG lacks a valid viewBox. */
@@ -202,22 +202,18 @@ const ScannerProposalMismatchErrorFields: {
   readonly declaredRef: Schema.optional<typeof Schema.String>
   readonly iconName: typeof Schema.String
   readonly proposedRef: Schema.optional<typeof Schema.String>
-  readonly reason: Schema.Schema<"proposal-only" | "ref-mismatch" | "missing-from-proposal">
+  readonly reason: Schema.Literals<readonly ["proposal-only", "ref-mismatch", "missing-from-proposal"]>
 } = {
   declaredRef: Schema.optional(Schema.String),
   iconName: Schema.String,
   proposedRef: Schema.optional(Schema.String),
-  reason: Schema.Union(
-    Schema.Literal("proposal-only"),
-    Schema.Literal("ref-mismatch"),
-    Schema.Literal("missing-from-proposal")
-  )
+  reason: Schema.Literals(["proposal-only", "ref-mismatch", "missing-from-proposal"])
 } as const
 
-const ScannerProposalMismatchErrorBase: TaggedErrorBase<
+const ScannerProposalMismatchErrorBase: Schema.Class<
   ScannerProposalMismatchError,
-  "ScannerProposalMismatchError",
-  typeof ScannerProposalMismatchErrorFields
+  Schema.TaggedStruct<"ScannerProposalMismatchError", typeof ScannerProposalMismatchErrorFields>,
+  Cause.YieldableError
 > = Schema.TaggedError<ScannerProposalMismatchError>("ScannerProposalMismatchError")(
   "ScannerProposalMismatchError",
   ScannerProposalMismatchErrorFields
@@ -236,8 +232,11 @@ const SvgParseErrorFields: {
   message: Schema.String
 } as const
 
-const SvgParseErrorBase: TaggedErrorBase<SvgParseError, "SvgParseError", typeof SvgParseErrorFields> =
-  Schema.TaggedError<SvgParseError>("SvgParseError")("SvgParseError", SvgParseErrorFields)
+const SvgParseErrorBase: Schema.Class<
+  SvgParseError,
+  Schema.TaggedStruct<"SvgParseError", typeof SvgParseErrorFields>,
+  Cause.YieldableError
+> = Schema.TaggedError<SvgParseError>("SvgParseError")("SvgParseError", SvgParseErrorFields)
 
 /** Error raised when SVG text cannot be parsed into accepted SVG shape. */
 export class SvgParseError extends SvgParseErrorBase {}
@@ -252,10 +251,10 @@ const UnsafeSvgContentErrorFields: {
   reason: Schema.String
 } as const
 
-const UnsafeSvgContentErrorBase: TaggedErrorBase<
+const UnsafeSvgContentErrorBase: Schema.Class<
   UnsafeSvgContentError,
-  "UnsafeSvgContentError",
-  typeof UnsafeSvgContentErrorFields
+  Schema.TaggedStruct<"UnsafeSvgContentError", typeof UnsafeSvgContentErrorFields>,
+  Cause.YieldableError
 > = Schema.TaggedError<UnsafeSvgContentError>("UnsafeSvgContentError")(
   "UnsafeSvgContentError",
   UnsafeSvgContentErrorFields
