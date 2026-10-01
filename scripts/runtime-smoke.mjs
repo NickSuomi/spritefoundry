@@ -60,7 +60,7 @@ const assertManifest = async (outDir) => {
 const smokeCore = async () => {
   const info = await Effect.runPromise(getSpritefoundryInfo())
   assert.equal(info.name, "spritefoundry")
-  assert.equal(info.effectLine, "effect-v4-rc")
+  assert.equal(info.effectLine, "effect-v4-stable")
 
   const { iconsDir, outDir } = await createFixture("spritefoundry-core-smoke")
   const result = await Effect.runPromise(

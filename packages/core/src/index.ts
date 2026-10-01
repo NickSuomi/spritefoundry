@@ -7,10 +7,10 @@ export * from "./pipeline.js"
 export * from "./runtime.js"
 
 const SpritefoundryInfoFields: {
-  readonly effectLine: Schema.Literal<"effect-v4-rc">
+  readonly effectLine: Schema.Literal<"effect-v4-stable">
   readonly name: Schema.Literal<"spritefoundry">
 } = {
-  effectLine: Schema.Literal("effect-v4-rc"),
+  effectLine: Schema.Literal("effect-v4-stable"),
   name: Schema.Literal("spritefoundry")
 } as const
 
@@ -27,7 +27,7 @@ export class SpritefoundryInfo extends SpritefoundryInfoBase {}
 export const getSpritefoundryInfo: () => Effect.Effect<SpritefoundryInfo, never, never> = Effect.fn("getSpritefoundryInfo")(
   function* () {
     return new SpritefoundryInfo({
-      effectLine: "effect-v4-rc",
+      effectLine: "effect-v4-stable",
       name: "spritefoundry"
     })
   }

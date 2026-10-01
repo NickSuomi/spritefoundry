@@ -7,6 +7,8 @@ blockExoticSubdeps: true
 dangerouslyAllowAllBuilds: false
 engineStrict: true
 minimumReleaseAge: 10080
+minimumReleaseAgeExclude:
+  - effect@4.0.0
 minimumReleaseAgeIgnoreMissingTime: false
 minimumReleaseAgeStrict: true
 preferFrozenLockfile: true

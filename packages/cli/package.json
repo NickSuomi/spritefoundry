@@ -1,6 +1,6 @@
 {
   "name": "@nicksuomi/spritefoundry-cli",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "CLI for Spritefoundry.",
   "type": "module",
   "license": "Apache-2.0",
@@ -27,6 +27,6 @@
   },
   "dependencies": {
     "@nicksuomi/spritefoundry": "workspace:*",
-    "effect": "4.0.0-rc.117"
+    "effect": "4.0.0"
   }
 }
